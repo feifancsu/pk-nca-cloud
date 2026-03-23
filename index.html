@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PK-NCA Cloud | 非房室模型分析云平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pk-dark': '#0f172a',
+                        'pk-card': '#1e293b',
+                        'pk-accent': '#06b6d4',
+                        'pk-success': '#10b981',
+                        'pk-warning': '#f59e0b',
+                        'pk-danger': '#ef4444',
+                        'pk-purple': '#8b5cf6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+        .parameter-card {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .loading-spinner {
+            border: 3px solid rgba(6, 182, 212, 0.3);
+            border-radius: 50%;
+            border-top-color: #06b6d4;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="text-gray-100 font-sans antialiased overflow-x-hidden">
+
+    <!-- Navigation -->
+    <nav class="glass-panel sticky top-0 z-50 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-pk-accent to-pk-purple rounded-lg flex items-center justify-center neon-glow">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-pk-accent to-pk-purple bg-clip-text text-transparent">PK-NCA Cloud</h1>
+                        <p class="text-xs text-gray-400">基于 R NonCompart 的非房室模型分析</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="showHelp()" class="text-gray-400 hover:text-pk-accent transition-colors tooltip" data-tooltip="使用帮助">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-2 bg-pk-card px-3 py-1 rounded-full border border-gray-700">
+                        <div id="system-status" class="w-2 h-2 bg-pk-success rounded-full animate-pulse"></div>
+                        <span id="status-text" class="text-sm text-gray-300">系统就绪</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between relative">
+                <div class="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-700 -translate-y-1/2 z-0"></div>
+                <div class="absolute left-0 top-1/2 h-0.5 bg-gradient-to-r from-pk-accent to-pk-purple -translate-y-1/2 z-0 transition-all duration-500" id="progress-line" style="width: 0%"></div>
+                <div class="relative z-10 flex flex-col items-center cursor-pointer" onclick="goToStep(1)">
+                    <div id="step1-indicator" class="w-10 h-10 rounded-full bg-pk-accent text-white flex items-center justify-center font-bold shadow-lg shadow-pk-accent/50 transition-all">1</div>
+                    <span class="mt-2 text-sm font-medium text-pk-accent">数据导入</span>
+                </div>
+                <div class="relative z-10 flex flex-col items-center cursor-pointer" onclick="if(currentStep>=2) goToStep(2)">
+                    <div id="step2-indicator" class="w-10 h-10 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center font-bold transition-all">2</div>
+                    <span class="mt-2 text-sm font-medium text-gray-400">参数配置</span>
+                </div>
+                <div class="relative z-10 flex flex-col items-center cursor-pointer" onclick="if(currentStep>=3) goToStep(3)">
+                    <div id="step3-indicator" class="w-10 h-10 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center font-bold transition-all">3</div>
+                    <span class="mt-2 text-sm font-medium text-gray-400">NCA分析</span>
+                </div>
+                <div class="relative z-10 flex flex-col items-center cursor-pointer" onclick="if(currentStep>=4) goToStep(4)">
+                    <div id="step4-indicator" class="w-10 h-10 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center font-bold transition-all">4</div>
+                    <span class="mt-2 text-sm font-medium text-gray-400">结果导出</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Data Import -->
+        <section id="step1" class="slide-in">
+            <div class="glass-panel rounded-2xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-pk-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                        </svg>
+                        数据导入
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button onclick="loadDemoData('theoph')" class="px-4 py-2 bg-pk-purple/20 text-pk-purple border border-pk-purple/50 rounded-lg hover:bg-pk-purple/30 transition text-sm font-medium">
+                            加载Theoph示例
+                        </button>
+                        <button onclick="loadDemoData('indometh')" class="px-4 py-2 bg-pk-accent/20 text-pk-accent border border-pk-accent/50 rounded-lg hover:bg-pk-accent/30 transition text-sm font-medium">
+                            加载Indometh示例
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload Area -->
+                <div id="drop-zone" class="border-2 border-dashed border-gray-600 rounded-xl p-12 text-center hover:border-pk-accent hover:bg-pk-accent/5 transition-all cursor-pointer group relative overflow-hidden">
+                    <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.txt" class="hidden" onchange="handleFileSelect(event)">
+                    <div class="absolute inset-0 bg-gradient-to-r from-pk-accent/5 to-pk-purple/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="space-y-4 relative z-10">
+                        <div class="w-20 h-20 mx-auto bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                            <svg class="w-10 h-10 text-gray-400 group-hover:text-pk-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-lg font-medium text-white">拖放文件到此处或点击上传</p>
+                            <p class="text-sm text-gray-400 mt-1">支持 CSV, Excel, TXT 格式 (最大 10MB)</p>
+                            <p class="text-xs text-gray-500 mt-2">数据格式: 长格式 (Long format)，包含 Subject, Time, Concentration 列</p>
+                        </div>
+                        <button onclick="document.getElementById('file-input').click()" class="px-6 py-2 bg-pk-accent text-white rounded-lg hover:bg-cyan-600 transition font-medium shadow-lg shadow-pk-accent/25">
+                            选择文件
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Preview -->
+                <div id="data-preview-section" class="mt-6 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-pk-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            数据预览 <span id="row-count" class="text-sm font-normal text-gray-400 ml-2"></span>
+                        </h3>
+                        <div class="flex space-x-2">
+                            <button onclick="clearData()" class="px-3 py-1.5 text-pk-danger hover:text-red-400 text-sm font-medium border border-pk-danger/30 rounded-lg hover:bg-pk-danger/10 transition">
+                                清除数据
+                            </button>
+                            <button onclick="goToStep(2)" class="px-4 py-1.5 bg-pk-accent text-white rounded-lg text-sm font-medium hover:bg-cyan-600 transition">
+                                下一步 →
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar rounded-lg border border-gray-700 max-h-64">
+                        <table id="preview-table" class="w-full text-sm text-left text-gray-300">
+                            <thead class="text-xs text-gray-400 uppercase bg-gray-800 sticky top-0">
+                                <tr id="preview-header"></tr>
+                            </thead>
+                            <tbody id="preview-body" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 2: Parameter Configuration -->
+        <section id="step2" class="hidden slide-in">
+            <div class="glass-panel rounded-2xl p-6 mb-6">
+                <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-pk-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                    分析参数配置
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Column Mapping -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700">
+                            <h3 class="text-sm font-semibold text-pk-accent mb-4 uppercase tracking-wider flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                列映射 (CDISC SDTM)
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">受试者标识符 (Subject) <span class="text-pk-danger">*</span></label>
+                                    <select id="col-subject" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent focus:border-transparent transition">
+                                        <option value="">选择列...</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">时间列 (Time) <span class="text-pk-danger">*</span></label>
+                                    <select id="col-time" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent focus:border-transparent transition">
+                                        <option value="">选择列...</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">浓度列 (Concentration) <span class="text-pk-danger">*</span></label>
+                                    <select id="col-conc" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent focus:border-transparent transition">
+                                        <option value="">选择列...</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">分组变量 (可选)</label>
+                                    <select id="col-group" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent focus:border-transparent transition">
+                                        <option value="">无分组</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dosing Info -->
+                        <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700">
+                            <h3 class="text-sm font-semibold text-pk-accent mb-4 uppercase tracking-wider flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                                </svg>
+                                给药信息
+                            </h3>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">剂量 (Dose) <span class="text-pk-danger">*</span></label>
+                                    <input type="number" id="dose" step="0.01" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent focus:border-transparent transition" placeholder="例如: 320">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">剂量单位</label>
+                                    <select id="dose-unit" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent">
+                                        <option value="mg">mg</option>
+                                        <option value="ug">μg</option>
+                                        <option value="g">g</option>
+                                        <option value="ng">ng</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">给药途径</label>
+                                    <select id="admin-route" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent">
+                                        <option value="Extravascular">血管外 (Extravascular)</option>
+                                        <option value="Bolus">静脉推注 (Bolus)</option>
+                                        <option value="Infusion">静脉滴注 (Infusion)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="infusion-duration" class="mt-4 hidden">
+                                <label class="block text-sm font-medium text-gray-300 mb-1">输注时长 (小时) <span class="text-pk-danger">*</span></label>
+                                <input type="number" id="dur" step="0.1" class="w-1/3 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent focus:border-transparent transition" placeholder="例如: 0.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Options -->
+                    <div class="space-y-4">
+                        <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700">
+                            <h3 class="text-sm font-semibold text-pk-accent mb-4 uppercase tracking-wider flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                计算选项
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">AUC计算方法</label>
+                                    <select id="auc-method" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent">
+                                        <option value="Linear">线性梯形法 (Linear)</option>
+                                        <option value="Log">对数梯形法 (Log)</option>
+                                        <option value="LinearLog">混合法 (Linear up/Log down)</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">Linear: 线性上升线性下降; Log: 线性上升对数下降</p>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">最小调整R² (R2ADJ)</label>
+                                    <input type="number" id="r2adj" step="0.1" min="0" max="1" value="0.7" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent">
+                                    <p class="text-xs text-gray-500 mt-1">用于自动选择末端消除相数据点</p>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">浓度单位</label>
+                                    <select id="conc-unit" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent">
+                                        <option value="mg/L">mg/L</option>
+                                        <option value="ug/L">μg/L</option>
+                                        <option value="ng/mL">ng/mL</option>
+                                        <option value="mg/mL">mg/mL</option>
+                                        <option value="ug/mL">μg/mL</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium text-gray-300">时间单位</label>
+                                    <select id="time-unit" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-pk-accent">
+                                        <option value="h">小时 (h)</option>
+                                        <option value="min">分钟 (min)</option>
+                                        <option value="day">天 (day)</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex items-center space-x-2 pt-2">
+                                    <input type="checkbox" id="steady-state" class="w-4 h-4 rounded border-gray-600 text-pk-accent focus:ring-pk-accent bg-gray-800">
+                                    <label for="steady-state" class="text-sm text-gray-300">稳态分析 (Steady State)</label>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="exclude-c0" class="w-4 h-4 rounded border-gray-600 text-pk-accent focus:ring-pk-accent bg-gray-800">
+                                    <label for="exclude-c0" class="text-sm text-gray-300">排除C0 (Backextrapolation)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interval AUC -->
+                        <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700">
+                            <h3 class="text-sm font-semibold text-pk-accent mb-2 uppercase tracking-wider flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                区间AUC (可选)
+                            </h3>
+                            <div id="iauc-container" class="space-y-2">
+                                <div class="flex space-x-2">
+                                    <input type="text" placeholder="名称 (如: AUC[0-12h])" class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-pk-accent">
+                                    <input type="number" placeholder="起始" class="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-pk-accent">
+                                    <input type="number" placeholder="结束" class="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-pk-accent">
+                                    <button onclick="addIaucRow()" class="w-8 h-8 flex items-center justify-center text-pk-accent hover:text-cyan-400 hover:bg-pk-accent/10 rounded transition">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">添加特定时间区间的AUC计算，如AUC 0-12h用于生物等效性</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button onclick="goToStep(1)" class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        返回
+                    </button>
+                    <button onclick="validateAndProceed()" class="px-6 py-2 bg-gradient-to-r from-pk-accent to-pk-purple text-white rounded-lg hover:shadow-lg hover:shadow-pk-accent/30 transition font-medium flex items-center group">
+                        开始NCA分析
+                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 3: Analysis & Visualization -->
+        <section id="step3" class="hidden slide-in">
+            <div class="glass-panel rounded-2xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-pk-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        NCA分析结果
+                    </h2>
+                    <div class="flex space-x-2 bg-gray-800 rounded-lg p-1">
+                        <button onclick="toggleView('table')" id="btn-table" class="px-4 py-2 bg-pk-accent text-white rounded-md text-sm font-medium transition-all shadow-md">表格视图</button>
+                        <button onclick="toggleView('plot')" id="btn-plot" class="px-4 py-2 text-gray-400 hover:text-white rounded-md text-sm font-medium transition-all hover:bg-gray-700">图形视图</button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="parameter-card rounded-xl p-4 hover:scale-105 transition-transform cursor-pointer group">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider">受试者数量</p>
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-pk-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <p id="summary-subjects" class="text-2xl font-bold text-white">-</p>
+                    </div>
+                    <div class="parameter-card rounded-xl p-4 hover:scale-105 transition-transform cursor-pointer group">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider">Cmax 均值</p>
+                            <span class="text-xs text-pk-accent bg-pk-accent/10 px-2 py-0.5 rounded">Peak</span>
+                        </div>
+                        <p id="summary-cmax" class="text-2xl font-bold text-pk-accent">-</p>
+                        <p class="text-xs text-gray-500 mt-1">最大血药浓度</p>
+                    </div>
+                    <div class="parameter-card rounded-xl p-4 hover:scale-105 transition-transform cursor-pointer group">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider">AUCinf 均值</p>
+                            <span class="text-xs text-pk-purple bg-pk-purple/10 px-2 py-0.5 rounded">Exposure</span>
+                        </div>
+                        <p id="summary-auc" class="text-2xl font-bold text-pk-purple">-</p>
+                        <p class="text-xs text-gray-500 mt-1">曲线下面积</p>
+                    </div>
+                    <div class="parameter-card rounded-xl p-4 hover:scale-105 transition-transform cursor-pointer group">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider">t1/2 均值</p>
+                            <span class="text-xs text-pk-success bg-pk-success/10 px-2 py-0.5 rounded">Elimination</span>
+                        </div>
+                        <p id="summary-t12" class="text-2xl font-bold text-pk-success">-</p>
+                        <p class="text-xs text-gray-500 mt-1">消除半衰期</p>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div id="results-table-view" class="overflow-x-auto custom-scrollbar rounded-lg border border-gray-700 max-h-[500px] bg-pk-card/30">
+                    <table id="nca-results" class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-800 sticky top-0 z-10">
+                            <tr id="results-header"></tr>
+                        </thead>
+                        <tbody id="results-body" class="divide-y divide-gray-700"></tbody>
+                    </table>
+                </div>
+
+                <!-- Plot View -->
+                <div id="results-plot-view" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700 hover:border-pk-accent/50 transition">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-sm font-semibold text-white">浓度-时间曲线 (线性尺度)</h4>
+                                <button onclick="downloadChart('plot-linear')" class="text-xs text-pk-accent hover:text-cyan-400">下载图片</button>
+                            </div>
+                            <div class="relative h-64 w-full">
+                                <canvas id="plot-linear"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700 hover:border-pk-accent/50 transition">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-sm font-semibold text-white">浓度-时间曲线 (对数尺度)</h4>
+                                <button onclick="downloadChart('plot-log')" class="text-xs text-pk-accent hover:text-cyan-400">下载图片</button>
+                            </div>
+                            <div class="relative h-64 w-full">
+                                <canvas id="plot-log"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-pk-card/50 p-4 rounded-xl border border-gray-700 hover:border-pk-accent/50 transition">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-semibold text-white">半衰期拟合与末端消除相</h4>
+                            <button onclick="downloadChart('plot-slope')" class="text-xs text-pk-accent hover:text-cyan-400">下载图片</button>
+                        </div>
+                        <div class="relative h-80 w-full">
+                            <canvas id="plot-slope"></canvas>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">红色虚线表示末端消除相的指数回归拟合，用于计算半衰期和AUC外推</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-between items-center">
+                    <button onclick="goToStep(2)" class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        重新配置
+                    </button>
+                    <button onclick="goToStep(4)" class="px-6 py-2 bg-gradient-to-r from-pk-success to-emerald-600 text-white rounded-lg hover:shadow-lg hover:shadow-pk-success/30 transition font-medium flex items-center group">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        导出结果
+                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 4: Export -->
+        <section id="step4" class="hidden slide-in">
+            <div class="glass-panel rounded-2xl p-6 mb-6">
+                <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-pk-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    结果导出与报告
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportResults('csv')">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-white mb-2">导出CSV数据</h3>
+                            <p class="text-sm text-gray-400">导出完整的NCA参数表，可用于Excel或R进一步分析</p>
+                            <div class="mt-4 flex items-center text-xs text-blue-400">
+                                <span>点击下载</span>
+                                <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportResults('json')">
+                        <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-white mb-2">导出JSON</h3>
+                            <p class="text-sm text-gray-400">结构化数据格式，便于程序化处理和API集成</p>
+                            <div class="mt-4 flex items-center text-xs text-yellow-400">
+                                <span>点击下载</span>
+                                <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportResults('cdisc')">
+                        <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-white mb-2">CDISC SDTM格式</h3>
+                            <p class="text-sm text-gray-400">导出符合CDISC SDTM标准的PP域数据集，用于监管申报</p>
+                            <div class="mt-4 flex items-center text-xs text-purple-400">
+                                <span>点击下载</span>
+                                <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Preview -->
+                <div class="bg-pk-card/30 rounded-xl border border-gray-700 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-pk-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            分析报告预览
+                        </h3>
+                        <button onclick="copyReport()" class="text-sm text-pk-accent hover:text-cyan-400 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            复制报告
+                        </button>
+                    </div>
+                    <div id="report-content" class="bg-gray-900 rounded-lg p-4 font-mono text-sm text-gray-300 space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-between">
+                    <button onclick="goToStep(3)" class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        返回分析
+                    </button>
+                    <button onclick="resetAll()" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        新建分析
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-pk-accent font-medium">正在进行NCA计算...</p>
+            <p class="text-sm text-gray-400 mt-2">自动选择末端消除相并计算PK参数</p>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6 relative">
+            <button onclick="closeHelp()" class="absolute top-4 right-4 text-gray-400 hover:text-white p-2 hover:bg-gray-800 rounded-lg transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-pk-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                使用帮助与文档
+            </h2>
+            
+            <div class="space-y-6 text-gray-300 text-sm">
+                <div class="bg-pk-card/50 p-4 rounded-lg border border-gray-700">
+                    <h3 class="text-pk-accent font-semibold mb-2 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        关于 NonCompart
+                    </h3>
+                    <p class="leading-relaxed">本平台基于R语言的<a href="https://cran.r-project.org/web/packages/NonCompart/index.html" target="_blank" class="text-pk-accent hover:underline">NonCompart</a>包开发，严格遵循CDISC SDTM标准，提供工业级非房室模型(NCA)分析功能。支持自动斜率选择、线性与对数梯形法计算AUC，以及区间AUC计算。</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-pk-card/30 p-4 rounded-lg border border-gray-700">
+                        <h3 class="text-pk-accent font-semibold mb-3">数据格式要求</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 text-pk-success mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>长格式数据 (Long format)：每行一个观测值</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 text-pk-success mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>必需列：Subject (受试者ID), Time (时间), Conc (浓度)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 text-pk-success mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>支持CSV、Excel或文本文件导入</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 text-pk-success mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>可包含分组变量如Period、Sequence、Treatment</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-pk-card/30 p-4 rounded-lg border border-gray-700">
+                        <h3 class="text-pk-accent font-semibold mb-3">关键参数说明</h3>
+                        <ul class="space-y-2 text-gray-400 text-xs">
+                            <li><strong class="text-gray-300">R2ADJ:</strong> 调整R²阈值，用于自动选择末端消除相数据点 (默认0.7)</li>
+                            <li><strong class="text-gray-300">给药途径:</strong> Extravascular(口服/皮下)、Bolus(静推)、Infusion(静滴)</li>
+                            <li><strong class="text-gray-300">AUC方法:</strong> Linear(线性上升线性下降) vs Log(线性上升对数下降)</li>
+                            <li><strong class="text-gray-300">稳态:</strong> 勾选后使用AUClast代替AUCinf计算Vz和CL</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-pk-card/30 p-4 rounded-lg border border-gray-700">
+                    <h3 class="text-pk-accent font-semibold mb-3">输出参数 (CDISC SDTM PP域)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                        <div class="bg-gray-800 p-2 rounded">
+                            <span class="text-pk-accent font-mono">CMAX</span>
+                            <p class="text-gray-500 mt-1">最大浓度</p>
+                        </div>
+                        <div class="bg-gray-800 p-2 rounded">
+                            <span class="text-pk-accent font-mono">TMAX</span>
+                            <p class="text-gray-500 mt-1">达峰时间</p>
+                        </div>
+                        <div class="bg-gray-800 p-2 rounded">
+                            <span class="text-pk-accent font-mono">AUCLST</span>
+                            <p class="text-gray-500 mt-1">末次可测浓度AUC</p>
+                        </div>
+                        <div class="bg-gray-800 p-2 rounded">
+                            <span class="text-pk-accent font-mono">AUCIFO</span>
+                            <p class="text-gray-500 mt-1">观测无限外推AUC</p>
+                        </div>
+                        <div class="bg-gray-800 p-2 rounded">
+                            <span class="text-pk-accent font-mono">LAMZHL</span>
+                            <p class="text-gray-500 mt-1">末端消除半衰期</p>
+                        </div>
+                        <div class="bg-gray-800 p-2 rounded">
+                            <span class="text-pk-accent font-mono">CLFO</span>
+                            <p class="text-gray-500 mt-1">总清除率</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let currentData = null;
+        let currentStep = 1;
+        let ncaResults = null;
+        let charts = {};
+        let sortDirection = {};
+
+        // Demo Data
+        const demoData = {
+            theoph: [
+                {Subject: 1, Time: 0.00, conc: 0.00},
+                {Subject: 1, Time: 0.25, conc: 2.84},
+                {Subject: 1, Time: 0.57, conc: 6.57},
+                {Subject: 1, Time: 1.12, conc: 10.50},
+                {Subject: 1, Time: 2.02, conc: 9.66},
+                {Subject: 1, Time: 3.82, conc: 8.58},
+                {Subject: 1, Time: 5.10, conc: 8.36},
+                {Subject: 1, Time: 7.03, conc: 7.47},
+                {Subject: 1, Time: 9.05, conc: 6.89},
+                {Subject: 1, Time: 12.12, conc: 5.94},
+                {Subject: 1, Time: 24.37, conc: 3.28},
+                {Subject: 2, Time: 0.00, conc: 0.00},
+                {Subject: 2, Time: 0.37, conc: 1.85},
+                {Subject: 2, Time: 0.80, conc: 4.86},
+                {Subject: 2, Time: 1.50, conc: 8.54},
+                {Subject: 2, Time: 2.25, conc: 8.68},
+                {Subject: 2, Time: 3.52, conc: 8.23},
+                {Subject: 2, Time: 5.07, conc: 7.56},
+                {Subject: 2, Time: 7.07, conc: 7.09},
+                {Subject: 2, Time: 9.03, conc: 6.56},
+                {Subject: 2, Time: 12.05, conc: 5.88},
+                {Subject: 2, Time: 24.22, conc: 3.56},
+                {Subject: 3, Time: 0.00, conc: 0.00},
+                {Subject: 3, Time: 0.25, conc: 2.21},
+                {Subject: 3, Time: 0.75, conc: 5.96},
+                {Subject: 3, Time: 1.50, conc: 9.42},
+                {Subject: 3, Time: 2.25, conc: 9.39},
+                {Subject: 3, Time: 3.52, conc: 8.78},
+                {Subject: 3, Time: 5.07, conc: 8.12},
+                {Subject: 3, Time: 7.10, conc: 7.39},
+                {Subject: 3, Time: 9.07, conc: 6.72},
+                {Subject: 3, Time: 12.15, conc: 5.61},
+                {Subject: 3, Time: 24.17, conc: 3.28}
+            ],
+            indometh: [
+                {Subject: 1, time: 0.25, conc: 1.50},
+                {Subject: 1, time: 0.50, conc: 2.11},
+                {Subject: 1, time: 0.75, conc: 2.76},
+                {Subject: 1, time: 1.00, conc: 3.02},
+                {Subject: 1, time: 1.25, conc: 3.30},
+                {Subject: 1, time: 1.50, conc: 3.46},
+                {Subject: 1, time: 2.00, conc: 3.08},
+                {Subject: 1, time: 3.00, conc: 2.24},
+                {Subject: 1, time: 4.00, conc: 1.68},
+                {Subject: 1, time: 6.00, conc: 0.84},
+                {Subject: 1, time: 8.00, conc: 0.42},
+                {Subject: 2, time: 0.25, conc: 2.03},
+                {Subject: 2, time: 0.50, conc: 3.40},
+                {Subject: 2, time: 0.75, conc: 4.21},
+                {Subject: 2, time: 1.00, conc: 4.42},
+                {Subject: 2, time: 1.25, conc: 4.38},
+                {Subject: 2, time: 1.50, conc: 4.02},
+                {Subject: 2, time: 2.00, conc: 3.46},
+                {Subject: 2, time: 3.00, conc: 2.68},
+                {Subject: 2, time: 4.00, conc: 1.84},
+                {Subject: 2, time: 6.00, conc: 0.95},
+                {Subject: 2, time: 8.00, conc: 0.35}
+            ]
+        };
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDragAndDrop();
+            setupAdminRouteListener();
+        });
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('drop-zone');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('border-pk-accent', 'bg-pk-accent/10');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('border-pk-accent', 'bg-pk-accent/10');
+                });
+            });
+
+            dropZone.addEventListener('drop', handleDrop);
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) handleFiles(files[0]);
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length) handleFiles(e.target.files[0]);
+        }
+
+        function handleFiles(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                if (file.name.endsWith('.csv')) {
+                    Papa.parse(content, {
+                        header: true,
+                        dynamicTyping: true,
+                        skipEmptyLines: true,
+                        complete: (results) => {
+                            loadData(results.data);
+                        }
+                    });
+                } else {
+                    // Simple TSV/TXT handling
+                    const lines = content.split('\n').filter(l => l.trim());
+                    const headers = lines[0].split(/[\t,]/);
+                    const data = lines.slice(1).map(line => {
+                        const values = line.split(/[\t,]/);
+                        const obj = {};
+                        headers.forEach((h, i) => obj[h.trim()] = isNaN(values[i]) ? values[i] : parseFloat(values[i]));
+                        return obj;
+                    });
+                    loadData(data);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadDemoData(type) {
+            loadData(demoData[type]);
+            // Auto-configure for demo
+            setTimeout(() => {
+                if (type === 'theoph') {
+                    document.getElementById('col-subject').value = 'Subject';
+                    document.getElementById('col-time').value = 'Time';
+                    document.getElementById('col-conc').value = 'conc';
+                    document.getElementById('dose').value = 320;
+                    document.getElementById('admin-route').value = 'Extravascular';
+                } else if (type === 'indometh') {
+                    document.getElementById('col-subject').value = 'Subject';
+                    document.getElementById('col-time').value = 'time';
+                    document.getElementById('col-conc').value = 'conc';
+                    document.getElementById('dose').value = 25;
+                    document.getElementById('admin-route').value = 'Infusion';
+                    document.getElementById('dur').value = 0.5;
+                    document.getElementById('infusion-duration').classList.remove('hidden');
+                }
+            }, 100);
+        }
+
+        function loadData(data) {
+            currentData = data;
+            displayPreview(data);
+            populateColumnSelects(data);
+            document.getElementById('data-preview-section').classList.remove('hidden');
+            
+            // Auto-advance to step 2 after short delay
+            setTimeout(() => {
+                if (currentStep === 1) goToStep(2);
+            }, 800);
+        }
+
+        function displayPreview(data) {
+            const headers = Object.keys(data[0]);
+            const previewCount = Math.min(data.length, 10);
+            
+            document.getElementById('row-count').textContent = `(${data.length} 行 × ${headers.length} 列)`;
+            
+            const headerRow = document.getElementById('preview-header');
+            headerRow.innerHTML = headers.map(h => `<th class="px-6 py-3 whitespace-nowrap">${h}</th>`).join('');
+            
+            const body = document.getElementById('preview-body');
+            body.innerHTML = data.slice(0, previewCount).map(row => 
+                `<tr class="hover:bg-gray-800/50">${headers.map(h => 
+                    `<td class="px-6 py-3 whitespace-nowrap">${row[h] !== undefined ? row[h] : ''}</td>`
+                ).join('')}</tr>`
+            ).join('');
+        }
+
+        function populateColumnSelects(data) {
+            const headers = Object.keys(data[0]);
+            const selects = ['col-subject', 'col-time', 'col-conc', 'col-group'];
+            
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                const currentVal = select.value;
+                select.innerHTML = id === 'col-group' ? '<option value="">无分组</option>' : '<option value="">选择列...</option>';
+                headers.forEach(h => {
+                    const option = document.createElement('option');
+                    option.value = h;
+                    option.textContent = h;
+                    select.appendChild(option);
+                });
+                if (currentVal && headers.includes(currentVal)) select.value = currentVal;
+            });
+        }
+
+        function clearData() {
+            currentData = null;
+            document.getElementById('data-preview-section').classList.add('hidden');
+            document.getElementById('file-input').value = '';
+        }
+
+        function setupAdminRouteListener() {
+            document.getElementById('admin-route').addEventListener('change', (e) => {
+                const infusionDiv = document.getElementById('infusion-duration');
+                if (e.target.value === 'Infusion') {
+                    infusionDiv.classList.remove('hidden');
+                } else {
+                    infusionDiv.classList.add('hidden');
+                }
+            });
+        }
+
+        function addIaucRow() {
+            const container = document.getElementById('iauc-container');
+            const div = document.createElement('div');
+            div.className = 'flex space-x-2';
+            div.innerHTML = `
+                <input type="text" placeholder="名称 (如: AUC[0-12h])" class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-pk-accent">
+                <input type="number" placeholder="起始" class="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-pk-accent">
+                <input type="number" placeholder="结束" class="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-pk-accent">
+                <button onclick="this.parentElement.remove()" class="w-8 h-8 flex items-center justify-center text-pk-danger hover:text-red-400 hover:bg-pk-danger/10 rounded transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function validateAndProceed() {
+            const required = ['col-subject', 'col-time', 'col-conc', 'dose'];
+            const missing = required.filter(id => !document.getElementById(id).value);
+            
+            if (missing.length > 0) {
+                alert('请填写所有必填字段');
+                return;
+            }
+            
+            if (document.getElementById('admin-route').value === 'Infusion' && !document.getElementById('dur').value) {
+                alert('静脉滴注需要填写输注时长');
+                return;
+            }
+            
+            performNCA();
+        }
+
+        // NCA Calculation Engine
+        function performNCA() {
+            // Show loading
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            
+            setTimeout(() => {
+                const subjectCol = document.getElementById('col-subject').value;
+                const timeCol = document.getElementById('col-time').value;
+                const concCol = document.getElementById('col-conc').value;
+                const groupCol = document.getElementById('col-group').value;
+                const dose = parseFloat(document.getElementById('dose').value);
+                const dur = parseFloat(document.getElementById('dur').value) || 0;
+                const admin = document.getElementById('admin-route').value;
+                const method = document.getElementById('auc-method').value;
+                const r2adj = parseFloat(document.getElementById('r2adj').value);
+                
+                // Group data by subject
+                const subjects = [...new Set(currentData.map(d => d[subjectCol]))];
+                const results = [];
+                
+                subjects.forEach(subj => {
+                    const subjData = currentData.filter(d => d[subjectCol] === subj).sort((a, b) => a[timeCol] - b[timeCol]);
+                    const times = subjData.map(d => d[timeCol]);
+                    const concs = subjData.map(d => d[concCol]);
+                    
+                    const params = calculateSubjectNCA(times, concs, dose, dur, admin, method, r2adj);
+                    params[subjectCol] = subj;
+                    if (groupCol) params[groupCol] = subjData[0][groupCol];
+                    results.push(params);
+                });
+                
+                ncaResults = results;
+                
+                // Hide loading
+                document.getElementById('loading-overlay').classList.add('hidden');
+                
+                displayResults(results);
+                goToStep(3);
+            }, 500);
+        }
+
+        function calculateSubjectNCA(times, concs, dose, dur, admin, method, r2adj) {
+            // Filter out zero time points for some calculations but keep for C0
+            const posIndices = concs.map((c, i) => c > 0 ? i : -1).filter(i => i !== -1);
+            const posTimes = posIndices.map(i => times[i]);
+            const posConcs = posIndices.map(i => concs[i]);
+            
+            // CMAX and TMAX
+            const cmax = Math.max(...concs);
+            const tmax = times[concs.indexOf(cmax)];
+            
+            // AUCLST (AUC to last measurable concentration)
+            let auclst = 0;
+            for (let i = 0; i < posIndices.length - 1; i++) {
+                const t1 = posTimes[i], t2 = posTimes[i+1];
+                const c1 = posConcs[i], c2 = posConcs[i+1];
+                const dt = t2 - t1;
+                
+                if (method === 'Linear' || (method === 'LinearLog' && c2 >= c1)) {
+                    auclst += (c1 + c2) * dt / 2;
+                } else {
+                    // Log trapezoidal
+                    if (c1 > 0 && c2 > 0) {
+                        auclst += (c2 - c1) * dt / Math.log(c2 / c1);
+                    } else {
+                        auclst += (c1 + c2) * dt / 2;
+                    }
+                }
+            }
+            
+            // Terminal slope estimation (BestSlope logic)
+            let lamz = 0, lamzhl = 0, aucinf = 0, aucpe = 0, cl = 0, vz = 0;
+            let intercept = 0, r2 = 0, bestN = 3;
+            
+            if (posConcs.length >= 3) {
+                // Try last 3, 4, 5... points to find best R2ADJ
+                let bestR2 = 0, bestSlope = 0, bestInt = 0;
+                
+                for (let n = 3; n <= Math.min(posConcs.length, 8); n++) {
+                    const logConcs = posConcs.slice(-n).map(c => Math.log(c));
+                    const sliceTimes = posTimes.slice(-n);
+                    const meanT = sliceTimes.reduce((a,b)=>a+b,0)/n;
+                    const meanLogC = logConcs.reduce((a,b)=>a+b,0)/n;
+                    
+                    let num = 0, denT = 0, denC = 0;
+                    for (let i = 0; i < n; i++) {
+                        num += (sliceTimes[i] - meanT) * (logConcs[i] - meanLogC);
+                        denT += Math.pow(sliceTimes[i] - meanT, 2);
+                        denC += Math.pow(logConcs[i] - meanLogC, 2);
+                    }
+                    
+                    if (denT === 0 || denC === 0) continue;
+                    
+                    const slope = num / denT;
+                    const r = num / Math.sqrt(denT * denC);
+                    const r2adj_calc = 1 - (1 - r*r) * (n-1) / (n-2);
+                    
+                    if (r2adj_calc > bestR2 && slope < 0) {
+                        bestR2 = r2adj_calc;
+                        bestSlope = -slope; // LAMZ is positive
+                        bestInt = meanLogC - slope * meanT;
+                        bestN = n;
+                    }
+                }
+                
+                if (bestR2 >= r2adj) {
+                    lamz = bestSlope;
+                    intercept = bestInt;
+                    r2 = bestR2;
+                    lamzhl = Math.log(2) / lamz;
+                    
+                    // AUCINF
+                    const clast = posConcs[posConcs.length - 1];
+                    const auc_extrap = clast / lamz;
+                    aucinf = auclst + auc_extrap;
+                    aucpe = (auc_extrap / aucinf) * 100;
+                    
+                    // CL and Vz (if extravascular or infusion)
+                    if (admin !== 'Bolus' && aucinf > 0) {
+                        cl = dose / aucinf;
+                        vz = cl / lamz;
+                    }
+                }
+            }
+            
+            // AUMC and MRT (simplified)
+            let aumc = 0;
+            for (let i = 0; i < posIndices.length - 1; i++) {
+                const t1 = posTimes[i], t2 = posTimes[i+1];
+                const c1 = posConcs[i], c2 = posConcs[i+1];
+                const dt = t2 - t1;
+                aumc += (t1*c1 + t2*c2) * dt / 2;
+            }
+            
+            const mrt = auclst > 0 ? aumc / auclst : 0;
+            const vss = cl > 0 ? cl * mrt : 0;
+            
+            return {
+                CMAX: cmax.toFixed(3),
+                TMAX: tmax.toFixed(2),
+                AUCLST: auclst.toFixed(2),
+                AUCIFO: aucinf > 0 ? aucinf.toFixed(2) : 'NC',
+                AUCPEO: aucpe > 0 ? aucpe.toFixed(2) : 'NC',
+                LAMZ: lamz > 0 ? lamz.toFixed(4) : 'NC',
+                LAMZHL: lamzhl > 0 ? lamzhl.toFixed(2) : 'NC',
+                R2ADJ: r2 > 0 ? r2.toFixed(4) : 'NC',
+                CLFO: cl > 0 ? cl.toFixed(3) : 'NC',
+                VZFO: vz > 0 ? vz.toFixed(2) : 'NC',
+                VSSFO: vss > 0 ? vss.toFixed(2) : 'NC',
+                C0: admin === 'Bolus' ? (Math.exp(intercept)).toFixed(2) : 'NC',
+                N: bestN
+            };
+        }
+
+        function displayResults(results) {
+            // Update summary cards
+            const cmaxs = results.map(r => parseFloat(r.CMAX)).filter(v => !isNaN(v));
+            const aucs = results.map(r => parseFloat(r.AUCIFO)).filter(v => !isNaN(v) && v > 0);
+            const t12s = results.map(r => parseFloat(r.LAMZHL)).filter(v => !isNaN(v) && v > 0);
+            
+            document.getElementById('summary-subjects').textContent = results.length;
+            document.getElementById('summary-cmax').textContent = cmaxs.length ? (cmaxs.reduce((a,b)=>a+b,0)/cmaxs.length).toFixed(2) : 'NC';
+            document.getElementById('summary-auc').textContent = aucs.length ? (aucs.reduce((a,b)=>a+b,0)/aucs.length).toFixed(1) : 'NC';
+            document.getElementById('summary-t12').textContent = t12s.length ? (t12s.reduce((a,b)=>a+b,0)/t12s.length).toFixed(2) : 'NC';
+            
+            // Table
+            if (results.length > 0) {
+                const headers = Object.keys(results[0]);
+                document.getElementById('results-header').innerHTML = headers.map(h => 
+                    `<th class="px-4 py-3 whitespace-nowrap cursor-pointer hover:text-white" onclick="sortTable('${h}')">${h}</th>`
+                ).join('');
+                
+                document.getElementById('results-body').innerHTML = results.map(r => 
+                    `<tr class="hover:bg-gray-800/50">${headers.map(h => 
+                        `<td class="px-4 py-3 whitespace-nowrap font-mono">${r[h]}</td>`
+                    ).join('')}</tr>`
+                ).join('');
+            }
+            
+            // Generate plots
+            generatePlots();
+            
+            // Generate report
+            generateReport();
+        }
+
+        function sortTable(column) {
+            if (!ncaResults) return;
+            
+            sortDirection[column] = !sortDirection[column];
+            const dir = sortDirection[column] ? 1 : -1;
+            
+            ncaResults.sort((a, b) => {
+                const valA = parseFloat(a[column]) || a[column];
+                const valB = parseFloat(b[column]) || b[column];
+                
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    return (valA - valB) * dir;
+                }
+                return String(valA).localeCompare(String(valB)) * dir;
+            });
+            
+            displayResults(ncaResults);
+        }
+
+        function generatePlots() {
+            const subjectCol = document.getElementById('col-subject').value;
+            const timeCol = document.getElementById('col-time').value;
+            const concCol = document.getElementById('col-conc').value;
+            
+            const subjects = [...new Set(currentData.map(d => d[subjectCol]))].slice(0, 6);
+            
+            // Prepare datasets
+            const colors = ['#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+            
+            const datasets = subjects.map((subj, idx) => {
+                const subjData = currentData.filter(d => d[subjectCol] === subj).sort((a,b) => a[timeCol] - b[timeCol]);
+                return {
+                    label: `Subject ${subj}`,
+                    data: subjData.map(d => ({x: d[timeCol], y: d[concCol]})),
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length] + '20',
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 4
+                };
+            });
+            
+            // Linear plot
+            const ctxLinear = document.getElementById('plot-linear').getContext('2d');
+            if (charts.linear) charts.linear.destroy();
+            charts.linear = new Chart(ctxLinear, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear',
+                            title: { display: true, text: 'Time (h)', color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Concentration', color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+            
+            // Log plot
+            const ctxLog = document.getElementById('plot-log').getContext('2d');
+            if (charts.log) charts.log.destroy();
+            charts.log = new Chart(ctxLog, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Time (h)', color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Concentration (log)', color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+            
+            // Slope plot (first subject only with regression line)
+            const firstSubj = subjects[0];
+            const firstData = currentData.filter(d => d[subjectCol] === firstSubj).sort((a,b) => a[timeCol] - b[timeCol]);
+            const posPoints = firstData.filter(d => d[concCol] > 0);
+            
+            const ctxSlope = document.getElementById('plot-slope').getContext('2d');
+            if (charts.slope) charts.slope.destroy();
+            
+            // Calculate regression line for last 3 points
+            const last3 = posPoints.slice(-3);
+            const logConcs = last3.map(d => Math.log(d[concCol]));
+            const times = last3.map(d => d[timeCol]);
+            const n = last3.length;
+            const sumX = times.reduce((a,b)=>a+b,0);
+            const sumY = logConcs.reduce((a,b)=>a+b,0);
+            const sumXY = times.reduce((acc, t, i) => acc + t * logConcs[i], 0);
+            const sumX2 = times.reduce((acc, t) => acc + t*t, 0);
+            const slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
+            const intercept = (sumY - slope*sumX) / n;
+            
+            const minT = Math.min(...times), maxT = Math.max(...times);
+            const lineData = [
+                {x: minT - 0.5, y: Math.exp(intercept + slope*(minT - 0.5))},
+                {x: maxT + 2, y: Math.exp(intercept + slope*(maxT + 2))}
+            ];
+            
+            charts.slope = new Chart(ctxSlope, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Observed',
+                        data: posPoints.map(d => ({x: d[timeCol], y: d[concCol]})),
+                        backgroundColor: '#06b6d4',
+                        pointRadius: 6
+                    }, {
+                        label: 'Terminal Slope',
+                        data: lineData,
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } },
+                        title: { display: true, text: `Subject ${firstSubj} - Terminal Elimination Phase`, color: '#fff' }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear',
+                            title: { display: true, text: 'Time (h)', color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Concentration', color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function toggleView(view) {
+            document.getElementById('results-table-view').classList.toggle('hidden', view !== 'table');
+            document.getElementById('results-plot-view').classList.toggle('hidden', view !== 'plot');
+            
+            document.getElementById('btn-table').className = view === 'table' ? 
+                'px-4 py-2 bg-pk-accent text-white rounded-md text-sm font-medium transition-all shadow-md' : 
+                'px-4 py-2 text-gray-400 hover:text-white rounded-md text-sm font-medium transition-all hover:bg-gray-700';
+            document.getElementById('btn-plot').className = view === 'plot' ? 
+                'px-4 py-2 bg-pk-accent text-white rounded-md text-sm font-medium transition-all shadow-md' : 
+                'px-4 py-2 text-gray-400 hover:text-white rounded-md text-sm font-medium transition-all hover:bg-gray-700';
+        }
+
+        function generateReport() {
+            const config = {
+                dose: document.getElementById('dose').value,
+                route: document.getElementById('admin-route').value,
+                method: document.getElementById('auc-method').value,
+                unit: document.getElementById('conc-unit').value,
+                timeUnit: document.getElementById('time-unit').value
+            };
+            
+            const content = `
+=================================================
+        PK-NCA 分析报告
+        基于 NonCompart R Package
+=================================================
+
+分析日期: ${new Date().toLocaleString()}
+给药剂量: ${config.dose} ${document.getElementById('dose-unit').value}
+给药途径: ${config.route}
+AUC计算方法: ${config.method}
+浓度单位: ${config.unit}
+时间单位: ${config.timeUnit}
+
+-------------------------------------------------
+统计摘要
+-------------------------------------------------
+受试者数量: ${ncaResults.length}
+
+关键参数统计:
+- Cmax (均值 ± SD): ${calculateMeanSD(ncaResults, 'CMAX')}
+- Tmax (中位数 [范围]): ${calculateMedianRange(ncaResults, 'TMAX')}
+- AUClast (均值 ± SD): ${calculateMeanSD(ncaResults, 'AUCLST')}
+- AUCinf (均值 ± SD): ${calculateMeanSD(ncaResults, 'AUCIFO')}
+- 半衰期 t1/2 (均值 ± SD): ${calculateMeanSD(ncaResults, 'LAMZHL')}
+- 清除率 CL (均值 ± SD): ${calculateMeanSD(ncaResults, 'CLFO')}
+
+-------------------------------------------------
+个体PK参数表
+-------------------------------------------------
+${generateIndividualTable()}
+
+-------------------------------------------------
+质量检查
+-------------------------------------------------
+- 末端消除相R² > 0.7: ${ncaResults.filter(r => parseFloat(r.R2ADJ) > 0.7).length}/${ncaResults.length}
+- AUC外推比例 < 20%: ${ncaResults.filter(r => parseFloat(r.AUCPEO) < 20).length}/${ncaResults.length}
+
+报告生成完成。
+            `;
+            
+            document.getElementById('report-content').textContent = content;
+        }
+
+        function calculateMeanSD(results, param) {
+            const values = results.map(r => parseFloat(r[param])).filter(v => !isNaN(v) && v > 0);
+            if (values.length === 0) return 'NC';
+            const mean = values.reduce((a,b) => a+b, 0) / values.length;
+            const sd = Math.sqrt(values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / (values.length - 1 || 1));
+            return `${mean.toFixed(2)} ± ${sd.toFixed(2)}`;
+        }
+
+        function calculateMedianRange(results, param) {
+            const values = results.map(r => parseFloat(r[param])).filter(v => !isNaN(v)).sort((a,b) => a-b);
+            if (values.length === 0) return 'NC';
+            const median = values[Math.floor(values.length/2)];
+            return `${median.toFixed(2)} [${values[0].toFixed(2)}-${values[values.length-1].toFixed(2)}]`;
+        }
+
+        function generateIndividualTable() {
+            const headers = Object.keys(ncaResults[0]);
+            const colWidths = headers.map(h => Math.max(h.length, ...ncaResults.map(r => String(r[h]).length)));
+            
+            let table = headers.map((h, i) => h.padEnd(colWidths[i])).join(' | ') + '\n';
+            table += headers.map((h, i) => '-'.repeat(colWidths[i])).join('-+-') + '\n';
+            
+            ncaResults.forEach(r => {
+                table += headers.map((h, i) => String(r[h]).padEnd(colWidths[i])).join(' | ') + '\n';
+            });
+            
+            return table;
+        }
+
+        function exportResults(format) {
+            if (!ncaResults) return;
+            
+            if (format === 'csv') {
+                const headers = Object.keys(ncaResults[0]);
+                const csv = [
+                    headers.join(','),
+                    ...ncaResults.map(r => headers.map(h => r[h]).join(','))
+                ].join('\n');
+                
+                downloadFile(csv, 'nca_results.csv', 'text/csv');
+            } else if (format === 'json') {
+                const json = JSON.stringify(ncaResults, null, 2);
+                downloadFile(json, 'nca_results.json', 'application/json');
+            } else if (format === 'cdisc') {
+                // CDISC SDTM PP domain format
+                const cdiscData = ncaResults.map((r, i) => ({
+                    STUDYID: 'STUDY001',
+                    DOMAIN: 'PP',
+                    USUBJID: r[Object.keys(r)[0]],
+                    PPSEQ: i+1,
+                    PPCAT: 'PK',
+                    PPTESTCD: Object.keys(r).slice(1),
+                    PPTEST: Object.keys(r).slice(1).map(k => k),
+                    PPORRES: Object.values(r).slice(1),
+                    PPORRESU: 'various'
+                }));
+                const json = JSON.stringify(cdiscData, null, 2);
+                downloadFile(json, 'nca_cdisc_sdtm.json', 'application/json');
+                alert('CDISC SDTM PP域格式已导出为JSON。实际应用中可转换为SAS XPT格式。');
+            }
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadChart(chartId) {
+            const canvas = document.getElementById(chartId);
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${chartId}_${new Date().getTime()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function copyReport() {
+            const content = document.getElementById('report-content').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('报告已复制到剪贴板');
+            });
+        }
+
+        function goToStep(step) {
+            // Update current step
+            currentStep = Math.max(currentStep, step);
+            
+            // Hide all sections
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step${i}`).classList.add('hidden');
+            }
+            
+            // Show target section
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            
+            // Update progress indicators
+            for (let i = 1; i <= 4; i++) {
+                const indicator = document.getElementById(`step${i}-indicator`);
+                if (i <= step) {
+                    indicator.className = 'w-10 h-10 rounded-full bg-pk-accent text-white flex items-center justify-center font-bold shadow-lg shadow-pk-accent/50 transition-all';
+                } else {
+                    indicator.className = 'w-10 h-10 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center font-bold transition-all';
+                }
+            }
+            
+            // Update progress line
+            const progress = ((step - 1) / 3) * 100;
+            document.getElementById('progress-line').style.width = `${progress}%`;
+            
+            // Update labels
+            const labels = document.querySelectorAll('.relative.z-10 span');
+            labels.forEach((label, idx) => {
+                if (idx < step) {
+                    label.className = 'mt-2 text-sm font-medium text-pk-accent';
+                } else {
+                    label.className = 'mt-2 text-sm font-medium text-gray-400';
+                }
+            });
+        }
+
+        function resetAll() {
+            currentData = null;
+            ncaResults = null;
+            sortDirection = {};
+            
+            // Clear inputs
+            document.getElementById('file-input').value = '';
+            document.getElementById('col-subject').innerHTML = '<option value="">选择列...</option>';
+            document.getElementById('col-time').innerHTML = '<option value="">选择列...</option>';
+            document.getElementById('col-conc').innerHTML = '<option value="">选择列...</option>';
+            document.getElementById('col-group').innerHTML = '<option value="">无分组</option>';
+            document.getElementById('dose').value = '';
+            document.getElementById('dur').value = '';
+            
+            // Clear charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+            
+            // Go to step 1
+            currentStep = 1;
+            goToStep(1);
+            
+            // Hide preview
+            document.getElementById('data-preview-section').classList.add('hidden');
+        }
+
+        function showHelp() {
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+
+        function closeHelp() {
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
