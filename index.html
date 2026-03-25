@@ -19,7 +19,8 @@
                         'pk-success': '#10b981',
                         'pk-warning': '#f59e0b',
                         'pk-danger': '#ef4444',
-                        'pk-purple': '#8b5cf6'
+                        'pk-purple': '#8b5cf6',
+                        'pk-blue': '#3b82f6'
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -541,7 +542,8 @@
                     结果导出与报告
                 </h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- CSV Export -->
                     <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportResults('csv')">
                         <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div class="relative z-10">
@@ -561,6 +563,7 @@
                         </div>
                     </div>
 
+                    <!-- JSON Export -->
                     <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportResults('json')">
                         <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div class="relative z-10">
@@ -580,6 +583,7 @@
                         </div>
                     </div>
 
+                    <!-- CDISC Export -->
                     <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportResults('cdisc')">
                         <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div class="relative z-10">
@@ -591,6 +595,26 @@
                             <h3 class="text-lg font-semibold text-white mb-2">CDISC SDTM格式</h3>
                             <p class="text-sm text-gray-400">导出符合CDISC SDTM标准的PP域数据集，用于监管申报</p>
                             <div class="mt-4 flex items-center text-xs text-purple-400">
+                                <span>点击下载</span>
+                                <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Word Report Export -->
+                    <div class="bg-pk-card/50 p-6 rounded-xl border border-gray-700 hover:border-pk-accent transition cursor-pointer group relative overflow-hidden" onclick="exportWordReport()">
+                        <div class="absolute inset-0 bg-gradient-to-br from-pk-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-pk-blue/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-pk-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-white mb-2">导出Word报告</h3>
+                            <p class="text-sm text-gray-400">生成格式规范的Word文档，包含PK参数表格和统计分析</p>
+                            <div class="mt-4 flex items-center text-xs text-pk-blue">
                                 <span>点击下载</span>
                                 <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
@@ -1497,6 +1521,536 @@ ${generateIndividualTable()}
             
             return table;
         }
+
+        // ============================================
+        // WORD REPORT EXPORT FUNCTION
+        // ============================================
+        
+        function exportWordReport() {
+            if (!ncaResults || ncaResults.length === 0) {
+                alert('请先完成NCA分析');
+                return;
+            }
+
+            // Get configuration values
+            const config = {
+                dose: document.getElementById('dose').value,
+                doseUnit: document.getElementById('dose-unit').value,
+                route: document.getElementById('admin-route').value,
+                method: document.getElementById('auc-method').value,
+                concUnit: document.getElementById('conc-unit').value,
+                timeUnit: document.getElementById('time-unit').value,
+                r2adj: document.getElementById('r2adj').value
+            };
+
+            // Generate current timestamp
+            const now = new Date();
+            const timestamp = now.toLocaleString('zh-CN');
+            const dateStr = now.toISOString().split('T')[0];
+
+            // Calculate statistics
+            const stats = calculateStatistics();
+
+            // Build HTML content for Word
+            const htmlContent = `
+<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset="utf-8">
+    <title>PK-NCA Analysis Report</title>
+    <style>
+        /* Word-specific styles */
+        @page {
+            size: 21.0cm 29.7cm;
+            margin: 2.54cm 2.54cm 2.54cm 2.54cm;
+        }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000000;
+        }
+        h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24pt;
+            color: #1a365d;
+            border-bottom: 2pt solid #2b6cb0;
+            padding-bottom: 12pt;
+        }
+        h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 18pt;
+            margin-bottom: 12pt;
+            color: #2c5282;
+            border-left: 4pt solid #4299e1;
+            padding-left: 8pt;
+        }
+        h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+            color: #2d3748;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12pt 0;
+            font-size: 10pt;
+        }
+        th {
+            background-color: #4299e1;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            padding: 8pt;
+            border: 1pt solid #2b6cb0;
+        }
+        td {
+            padding: 6pt 8pt;
+            border: 1pt solid #a0aec0;
+            text-align: center;
+        }
+        tr:nth-child(even) {
+            background-color: #f7fafc;
+        }
+        tr:hover {
+            background-color: #ebf8ff;
+        }
+        .header-info {
+            margin-bottom: 24pt;
+            padding: 12pt;
+            background-color: #f7fafc;
+            border: 1pt solid #e2e8f0;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6pt;
+        }
+        .label {
+            font-weight: bold;
+            color: #4a5568;
+        }
+        .value {
+            color: #2d3748;
+        }
+        .summary-box {
+            background-color: #f0fff4;
+            border: 1pt solid #9ae6b4;
+            padding: 12pt;
+            margin: 12pt 0;
+        }
+        .summary-title {
+            font-weight: bold;
+            color: #22543d;
+            margin-bottom: 8pt;
+        }
+        .stat-grid {
+            display: table;
+            width: 100%;
+            margin: 12pt 0;
+        }
+        .stat-row {
+            display: table-row;
+        }
+        .stat-cell {
+            display: table-cell;
+            padding: 6pt 12pt;
+            width: 50%;
+        }
+        .param-name {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .param-value {
+            color: #2b6cb0;
+            font-family: "Courier New", monospace;
+        }
+        .footer {
+            margin-top: 24pt;
+            padding-top: 12pt;
+            border-top: 1pt solid #e2e8f0;
+            font-size: 9pt;
+            color: #718096;
+            text-align: center;
+        }
+        .qc-pass {
+            color: #22543d;
+            font-weight: bold;
+        }
+        .qc-fail {
+            color: #742a2a;
+            font-weight: bold;
+        }
+        .note {
+            font-size: 9pt;
+            color: #718096;
+            font-style: italic;
+            margin-top: 6pt;
+        }
+    </style>
+</head>
+<body>
+    <h1>PK-NCA 药代动力学分析报告</h1>
+    
+    <div class="header-info">
+        <h3>分析信息</h3>
+        <table style="width: 100%; border: none; margin: 0;">
+            <tr style="background: transparent;">
+                <td style="border: none; text-align: left; width: 50%;">
+                    <span class="label">报告生成时间：</span>
+                    <span class="value">${timestamp}</span>
+                </td>
+                <td style="border: none; text-align: left; width: 50%;">
+                    <span class="label">分析软件：</span>
+                    <span class="value">PK-NCA Cloud (基于 R NonCompart)</span>
+                </td>
+            </tr>
+            <tr style="background: transparent;">
+                <td style="border: none; text-align: left;">
+                    <span class="label">给药剂量：</span>
+                    <span class="value">${config.dose} ${config.doseUnit}</span>
+                </td>
+                <td style="border: none; text-align: left;">
+                    <span class="label">给药途径：</span>
+                    <span class="value">${config.route}</span>
+                </td>
+            </tr>
+            <tr style="background: transparent;">
+                <td style="border: none; text-align: left;">
+                    <span class="label">AUC计算方法：</span>
+                    <span class="value">${config.method}</span>
+                </td>
+                <td style="border: none; text-align: left;">
+                    <span class="label">最小调整R²：</span>
+                    <span class="value">${config.r2adj}</span>
+                </td>
+            </tr>
+            <tr style="background: transparent;">
+                <td style="border: none; text-align: left;">
+                    <span class="label">浓度单位：</span>
+                    <span class="value">${config.concUnit}</span>
+                </td>
+                <td style="border: none; text-align: left;">
+                    <span class="label">时间单位：</span>
+                    <span class="value">${config.timeUnit}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>一、统计摘要</h2>
+    
+    <div class="summary-box">
+        <div class="summary-title">关键药代动力学参数统计</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>均值 ± 标准差</th>
+                    <th>中位数</th>
+                    <th>最小值</th>
+                    <th>最大值</th>
+                    <th>变异系数(CV%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>Cmax</b> (${config.concUnit})</td>
+                    <td>${stats.CMAX.meanSD}</td>
+                    <td>${stats.CMAX.median}</td>
+                    <td>${stats.CMAX.min}</td>
+                    <td>${stats.CMAX.max}</td>
+                    <td>${stats.CMAX.cv}</td>
+                </tr>
+                <tr>
+                    <td><b>Tmax</b> (${config.timeUnit})</td>
+                    <td>${stats.TMAX.meanSD}</td>
+                    <td>${stats.TMAX.median}</td>
+                    <td>${stats.TMAX.min}</td>
+                    <td>${stats.TMAX.max}</td>
+                    <td>${stats.TMAX.cv}</td>
+                </tr>
+                <tr>
+                    <td><b>AUClast</b> (${config.concUnit}·${config.timeUnit})</td>
+                    <td>${stats.AUCLST.meanSD}</td>
+                    <td>${stats.AUCLST.median}</td>
+                    <td>${stats.AUCLST.min}</td>
+                    <td>${stats.AUCLST.max}</td>
+                    <td>${stats.AUCLST.cv}</td>
+                </tr>
+                <tr>
+                    <td><b>AUCinf</b> (${config.concUnit}·${config.timeUnit})</td>
+                    <td>${stats.AUCIFO.meanSD}</td>
+                    <td>${stats.AUCIFO.median}</td>
+                    <td>${stats.AUCIFO.min}</td>
+                    <td>${stats.AUCIFO.max}</td>
+                    <td>${stats.AUCIFO.cv}</td>
+                </tr>
+                <tr>
+                    <td><b>t1/2</b> (${config.timeUnit})</td>
+                    <td>${stats.LAMZHL.meanSD}</td>
+                    <td>${stats.LAMZHL.median}</td>
+                    <td>${stats.LAMZHL.min}</td>
+                    <td>${stats.LAMZHL.max}</td>
+                    <td>${stats.LAMZHL.cv}</td>
+                </tr>
+                <tr>
+                    <td><b>CL/F</b> (${config.doseUnit}/${config.concUnit}/${config.timeUnit})</td>
+                    <td>${stats.CLFO.meanSD}</td>
+                    <td>${stats.CLFO.median}</td>
+                    <td>${stats.CLFO.min}</td>
+                    <td>${stats.CLFO.max}</td>
+                    <td>${stats.CLFO.cv}</td>
+                </tr>
+                <tr>
+                    <td><b>Vz/F</b> (${config.doseUnit}/${config.concUnit})</td>
+                    <td>${stats.VZFO.meanSD}</td>
+                    <td>${stats.VZFO.median}</td>
+                    <td>${stats.VZFO.min}</td>
+                    <td>${stats.VZFO.max}</td>
+                    <td>${stats.VZFO.cv}</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="note">注：NC = 未计算 (Not Calculated)；CV% = (标准差/均值) × 100%</p>
+    </div>
+
+    <h2>二、个体PK参数表</h2>
+    
+    ${generateWordPKTable(config)}
+
+    <h2>三、质量检查 (Quality Control)</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>检查项目</th>
+                <th>通过标准</th>
+                <th>通过数/总数</th>
+                <th>通过率</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>末端消除相R²</td>
+                <td>R²ADJ > 0.7</td>
+                <td>${stats.qc.r2.pass}/${stats.qc.r2.total}</td>
+                <td>${stats.qc.r2.rate}%</td>
+                <td class="${stats.qc.r2.rate >= 80 ? 'qc-pass' : 'qc-fail'}">${stats.qc.r2.rate >= 80 ? '通过' : '警告'}</td>
+            </tr>
+            <tr>
+                <td>AUC外推比例</td>
+                <td>AUCPEO < 20%</td>
+                <td>${stats.qc.aucpe.pass}/${stats.qc.aucpe.total}</td>
+                <td>${stats.qc.aucpe.rate}%</td>
+                <td class="${stats.qc.aucpe.rate >= 80 ? 'qc-pass' : 'qc-fail'}">${stats.qc.aucpe.rate >= 80 ? '通过' : '警告'}</td>
+            </tr>
+            <tr>
+                <td>半衰期计算</td>
+                <td>LAMZHL 可计算</td>
+                <td>${stats.qc.t12.pass}/${stats.qc.t12.total}</td>
+                <td>${stats.qc.t12.rate}%</td>
+                <td class="${stats.qc.t12.rate >= 80 ? 'qc-pass' : 'qc-fail'}">${stats.qc.t12.rate >= 80 ? '通过' : '警告'}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>四、方法学说明</h2>
+    
+    <h3>4.1 NCA计算方法</h3>
+    <p>本分析采用非房室模型(Non-Compartmental Analysis, NCA)方法，基于R语言NonCompart包实现。主要计算步骤包括：</p>
+    <ul>
+        <li><b>AUC计算：</b>采用${config.method}梯形法计算血药浓度-时间曲线下面积(AUC)</li>
+        <li><b>末端消除相：</b>采用自动斜率选择法(BestSlope)，基于调整R² ≥ ${config.r2adj}选择最佳末端消除相数据点</li>
+        <li><b>半衰期：</b>基于末端消除相的线性回归斜率计算消除速率常数(λz)，进而计算半衰期(t1/2 = ln(2)/λz)</li>
+        <li><b>清除率与分布容积：</b>基于AUCinf计算总清除率(CL/F)和表观分布容积(Vz/F)</li>
+    </ul>
+    
+    <h3>4.2 参数定义</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>参数符号</th>
+                <th>参数名称</th>
+                <th>单位</th>
+                <th>定义</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>Cmax</b></td>
+                <td>峰浓度</td>
+                <td>${config.concUnit}</td>
+                <td>给药后观察到的最大血药浓度</td>
+            </tr>
+            <tr>
+                <td><b>Tmax</b></td>
+                <td>达峰时间</td>
+                <td>${config.timeUnit}</td>
+                <td>达到Cmax所需的时间</td>
+            </tr>
+            <tr>
+                <td><b>AUClast</b></td>
+                <td>末点AUC</td>
+                <td>${config.concUnit}·${config.timeUnit}</td>
+                <td>从0时至最后可测浓度时间点的AUC</td>
+            </tr>
+            <tr>
+                <td><b>AUCinf</b></td>
+                <td>外推AUC</td>
+                <td>${config.concUnit}·${config.timeUnit}</td>
+                <td>从0时外推至无穷大的AUC，含末端外推部分</td>
+            </tr>
+            <tr>
+                <td><b>t1/2</b></td>
+                <td>消除半衰期</td>
+                <td>${config.timeUnit}</td>
+                <td>血药浓度下降一半所需的时间</td>
+            </tr>
+            <tr>
+                <td><b>CL/F</b></td>
+                <td>表观清除率</td>
+                <td>${config.doseUnit}/${config.concUnit}/${config.timeUnit}</td>
+                <td>单位时间内清除的表观药物分布容积</td>
+            </tr>
+            <tr>
+                <td><b>Vz/F</b></td>
+                <td>表观分布容积</td>
+                <td>${config.doseUnit}/${config.concUnit}</td>
+                <td>药物在体内分布程度的表观容积</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>本报告由 PK-NCA Cloud 自动生成 | 基于 R NonCompart 包 | 符合 CDISC SDTM 标准</p>
+        <p>报告生成日期：${dateStr}</p>
+    </div>
+</body>
+</html>
+            `;
+
+            // Create blob and download
+            const blob = new Blob(['\ufeff', htmlContent], {
+                type: 'application/msword'
+            });
+            
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `PK_NCA_Report_${dateStr}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Helper function to calculate statistics for Word report
+        function calculateStatistics() {
+            const params = ['CMAX', 'TMAX', 'AUCLST', 'AUCIFO', 'LAMZHL', 'CLFO', 'VZFO'];
+            const stats = {};
+            
+            params.forEach(param => {
+                const values = ncaResults.map(r => parseFloat(r[param])).filter(v => !isNaN(v) && v > 0);
+                if (values.length > 0) {
+                    const mean = values.reduce((a,b) => a+b, 0) / values.length;
+                    const sd = Math.sqrt(values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / (values.length - 1 || 1));
+                    const sorted = [...values].sort((a,b) => a-b);
+                    const median = sorted[Math.floor(sorted.length/2)];
+                    const cv = (sd / mean * 100).toFixed(1);
+                    
+                    stats[param] = {
+                        meanSD: `${mean.toFixed(2)} ± ${sd.toFixed(2)}`,
+                        median: median.toFixed(2),
+                        min: sorted[0].toFixed(2),
+                        max: sorted[sorted.length-1].toFixed(2),
+                        cv: cv + '%'
+                    };
+                } else {
+                    stats[param] = {
+                        meanSD: 'NC',
+                        median: 'NC',
+                        min: 'NC',
+                        max: 'NC',
+                        cv: 'NC'
+                    };
+                }
+            });
+            
+            // Quality control checks
+            const r2Pass = ncaResults.filter(r => parseFloat(r.R2ADJ) > 0.7).length;
+            const aucpePass = ncaResults.filter(r => parseFloat(r.AUCPEO) < 20).length;
+            const t12Pass = ncaResults.filter(r => r.LAMZHL !== 'NC').length;
+            const total = ncaResults.length;
+            
+            stats.qc = {
+                r2: { pass: r2Pass, total: total, rate: Math.round(r2Pass/total*100) },
+                aucpe: { pass: aucpePass, total: total, rate: Math.round(aucpePass/total*100) },
+                t12: { pass: t12Pass, total: total, rate: Math.round(t12Pass/total*100) }
+            };
+            
+            return stats;
+        }
+
+        // Helper function to generate PK parameter table for Word
+        function generateWordPKTable(config) {
+            const subjectCol = Object.keys(ncaResults[0])[0]; // First column is subject ID
+            const headers = Object.keys(ncaResults[0]);
+            
+            let tableHtml = `
+    <table>
+        <thead>
+            <tr>
+                <th>受试者ID</th>
+                <th>Cmax<br>(${config.concUnit})</th>
+                <th>Tmax<br>(${config.timeUnit})</th>
+                <th>AUClast<br>(${config.concUnit}·h)</th>
+                <th>AUCinf<br>(${config.concUnit}·h)</th>
+                <th>AUCPEO<br>(%)</th>
+                <th>t1/2<br>(${config.timeUnit})</th>
+                <th>CL/F</th>
+                <th>Vz/F</th>
+                <th>R²ADJ</th>
+            </tr>
+        </thead>
+        <tbody>
+            `;
+            
+            ncaResults.forEach(r => {
+                tableHtml += `
+            <tr>
+                <td><b>${r[subjectCol]}</b></td>
+                <td>${r.CMAX}</td>
+                <td>${r.TMAX}</td>
+                <td>${r.AUCLST}</td>
+                <td>${r.AUCIFO}</td>
+                <td>${r.AUCPEO}</td>
+                <td>${r.LAMZHL}</td>
+                <td>${r.CLFO}</td>
+                <td>${r.VZFO}</td>
+                <td>${r.R2ADJ}</td>
+            </tr>
+                `;
+            });
+            
+            tableHtml += `
+        </tbody>
+    </table>
+    <p class="note">注：NC = 未计算 (Not Calculated)；AUCPEO = AUC外推比例百分比</p>
+            `;
+            
+            return tableHtml;
+        }
+
+        // ============================================
+        // END OF WORD EXPORT FUNCTIONS
+        // ============================================
 
         function exportResults(format) {
             if (!ncaResults) return;
