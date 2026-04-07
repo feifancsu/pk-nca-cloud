@@ -239,7 +239,7 @@ input[type=range]{width:100%;accent-color:var(--ac)}
   <div class="home-wrap">
     <div class="hbg"></div><div class="hgrid"></div>
     <div class="hero-badge">⚗️ 中南大学湘雅药学院 · PharmCloud PK v3.0</div>
-    <div class="hero-title">专业级<span>药代动力学</span><br>云分析平台</div>
+    <div class="hero-title">药代动力学<span>云教学</span><br>平台</div>
     <div class="hero-btns">
       <button class="btn btn-p" style="padding:8px 20px;font-size:13px" onclick="go('data')">📂 导入数据</button>
       <button class="btn btn-g" style="padding:8px 20px;font-size:13px" onclick="loadDemo();go('nca')">🧪 示例数据</button>
@@ -290,6 +290,30 @@ input[type=range]{width:100%;accent-color:var(--ac)}
         </div>
         <div id="col-map-panel"><div style="font-size:10px;color:var(--mu)">加载数据后配置</div></div>
         <button class="btn btn-p" style="width:100%;justify-content:center;padding:7px;margin-top:5px" onclick="applyMap()">✓ 应用列映射</button>
+      </div>
+      <div class="sbs">
+        <div class="sbh">单位设置</div>
+        <div class="fr"><label class="fl">时间单位</label>
+          <select class="fs" id="dm-tu" onchange="syncUnits()">
+            <option value="h">小时 (h)</option>
+            <option value="min">分钟 (min)</option>
+            <option value="d">天 (d)</option>
+          </select></div>
+        <div class="fr"><label class="fl">浓度单位</label>
+          <select class="fs" id="dm-cu" onchange="syncUnits()">
+            <option value="ng/mL">ng/mL</option>
+            <option value="μg/mL">μg/mL</option>
+            <option value="μg/L">μg/L</option>
+            <option value="mg/L">mg/L</option>
+            <option value="nmol/L">nmol/L</option>
+            <option value="μmol/L">μmol/L</option>
+          </select></div>
+        <div class="fr"><label class="fl">剂量单位</label>
+          <select class="fs" id="dm-du">
+            <option value="mg">mg</option>
+            <option value="μg">μg</option>
+            <option value="g">g</option>
+          </select></div>
       </div>
       <div class="sbs" style="margin-top:auto">
         <div style="display:flex;flex-direction:column;gap:5px">
@@ -361,10 +385,19 @@ input[type=range]{width:100%;accent-color:var(--ac)}
             <option value="no">否（仅AUC₀₋t）</option>
           </select></div>
         <div class="fr"><label class="fl">浓度单位</label>
-          <input class="fi" id="nca-cu" value="ng/mL"></div>
+          <select class="fs" id="nca-cu">
+            <option value="ng/mL">ng/mL</option>
+            <option value="μg/mL">μg/mL</option>
+            <option value="μg/L">μg/L</option>
+            <option value="mg/L">mg/L</option>
+            <option value="nmol/L">nmol/L</option>
+            <option value="μmol/L">μmol/L</option>
+          </select></div>
         <div class="fr"><label class="fl">时间单位</label>
           <select class="fs" id="nca-tu">
-            <option value="h">小时 (h)</option><option value="min">分钟 (min)</option><option value="d">天 (d)</option>
+            <option value="h">小时 (h)</option>
+            <option value="min">分钟 (min)</option>
+            <option value="d">天 (d)</option>
           </select></div>
       </div>
       <div class="sbs">
@@ -427,8 +460,16 @@ input[type=range]{width:100%;accent-color:var(--ac)}
         <div class="sbh">当前数据集</div>
         <div id="ca-ds" style="font-size:10px;color:var(--mu)">未加载</div>
         <button class="btn btn-g btn-sm" style="width:100%;margin-top:5px" onclick="go('data')">→ 数据管理</button>
-        <div class="fr" style="margin-top:7px"><label class="fl">受试者（单受试者拟合）</label>
-          <select class="fs" id="ca-subj"><option value="">-- 全部均值 --</option></select></div>
+        <div class="sep"></div>
+        <div class="sbh">受试者选择</div>
+        <div class="ib" style="font-size:9px;margin-bottom:6px">勾选后点击"运行拟合"将对每位受试者单独拟合</div>
+        <div id="ca-subj-list" style="max-height:120px;overflow-y:auto;margin-bottom:6px">
+          <div style="font-size:10px;color:var(--mu)">加载数据后显示</div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-g btn-sm" style="flex:1;font-size:9px" onclick="checkAllSubjs(true)">全选</button>
+          <button class="btn btn-g btn-sm" style="flex:1;font-size:9px" onclick="checkAllSubjs(false)">全不选</button>
+        </div>
       </div>
       <div class="sbs">
         <div class="sbh">模型设置</div>
@@ -483,7 +524,12 @@ input[type=range]{width:100%;accent-color:var(--ac)}
       <div class="ca">
         <div id="ca-tab-fit" class="itc active">
           <div class="cw">
-            <div class="ct">观测值 vs 拟合曲线</div>
+            <div class="ct">观测值 vs 拟合曲线
+              <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="ca-yscale" onchange="reRenderCAFit()">
+                <option value="linear">线性坐标</option>
+                <option value="log">半对数坐标</option>
+              </select>
+            </div>
             <div style="height:270px;position:relative"><canvas id="ca-fit-cv"></canvas></div>
           </div>
           <div id="ca-fit-sum" style="margin-top:10px;color:var(--mu);text-align:center;padding:10px">请先运行拟合</div>
@@ -783,8 +829,7 @@ function applyMap(){
   G.data=parsed;
   const subs=[...new Set(parsed.map(r=>r.Subject))];
   // Update CA subject selector
-  const sel=document.getElementById('ca-subj');
-  sel.innerHTML='<option value="">-- 全部均值 --</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  updateCASubjList(subs);
   renderEDA(parsed,subs);
   syncNCAStatus();syncCAStatus();
   notify(`映射成功：${parsed.length}条有效数据，${subs.length}名受试者`,'ok');
@@ -838,10 +883,7 @@ function syncCAStatus(){
   if(!G.data){document.getElementById('ca-ds').innerHTML='<span style="color:var(--warn)">未加载数据</span>';return;}
   const subs=[...new Set(G.data.map(r=>r.Subject))];
   document.getElementById('ca-ds').innerHTML=`<span class="badge b-ok">✓</span> ${G.data.length}条 · ${subs.length}人`;
-  const sel=document.getElementById('ca-subj');
-  if(sel.options.length<=1){
-    sel.innerHTML='<option value="">-- 全部均值 --</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('');
-  }
+  updateCASubjList(subs);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -871,8 +913,7 @@ function loadDemo(){
   G.data=DEMO.map(r=>({...r,Dose:100}));
   syncNCAStatus();syncCAStatus();
   const subs=[...new Set(G.data.map(r=>r.Subject))];
-  const sel=document.getElementById('ca-subj');
-  sel.innerHTML='<option value="">-- 全部均值 --</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  updateCASubjList(subs);
   notify('示例数据已加载（3受试者，口服给药）','ok');
 }
 
@@ -1049,8 +1090,16 @@ function runNCA(){
     const ts_calc=ts.slice(0,tlastI+1);
     const cs_calc=cs.slice(0,tlastI+1);
 
-    const auc0t = aucFn(ts_calc, cs_calc);
-    const aumc0t = aumcFn(ts_calc, cs_calc);
+    let auc0t = aucFn(ts_calc, cs_calc);
+    let aumc0t = aumcFn(ts_calc, cs_calc);
+
+    // If first time point > 0, add triangle area from t=0 to t[0]
+    // Assumes C(0)=0 (appropriate for extravascular; for IV use with caution)
+    if(ts_calc[0] > 0 && cs_calc[0] > 0){
+      const t0 = ts_calc[0], c0 = cs_calc[0];
+      auc0t  += 0.5 * c0 * t0;           // triangle: (0+c0)/2 * t0
+      aumc0t += (0 * 0 + t0 * c0) / 2 * t0; // AUMC triangle contribution
+    }
 
     // Lambda-z (uses ALL positive points after Cmax, including those after tlast)
     const lz = estLZ(ts, cs);
@@ -1291,15 +1340,41 @@ function updateCAModel(){
   document.getElementById('ca-init-panel').innerHTML=html;
 }
 
-function getCAData(){
+function updateCASubjList(subs){
+  const panel = document.getElementById('ca-subj-list');
+  if(!panel) return;
+  if(!subs||!subs.length){panel.innerHTML='<div style="font-size:10px;color:var(--mu)">无受试者数据</div>';return;}
+  panel.innerHTML = subs.map(s=>`
+    <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;margin-bottom:3px">
+      <input type="checkbox" class="ca-subj-cb" value="${s}" checked>
+      <span>${s}</span>
+    </label>`).join('');
+}
+
+function checkAllSubjs(v){
+  document.querySelectorAll('.ca-subj-cb').forEach(cb=>cb.checked=v);
+}
+
+function getSelectedSubjs(){
+  const cbs=[...document.querySelectorAll('.ca-subj-cb')];
+  return cbs.filter(cb=>cb.checked).map(cb=>cb.value);
+}
+
+function getCADataForSubj(subj){
   if(!G.data) return [];
-  const subj=document.getElementById('ca-subj').value;
-  if(subj){
-    return G.data.filter(r=>r.Subject===subj).sort((a,b)=>a.Time-b.Time).map(r=>({t:r.Time,c:+r.Conc}));
+  return G.data.filter(r=>r.Subject===subj).sort((a,b)=>a.Time-b.Time)
+    .map(r=>({t:r.Time,c:+r.Conc}));
+}
+
+// Legacy: kept for single-subj fit path
+function getCAData(){
+  const sel=getSelectedSubjs();
+  if(sel.length===1){
+    return getCADataForSubj(sel[0]);
   }
-  const tMap={};
-  G.data.forEach(r=>{if(!tMap[r.Time]) tMap[r.Time]=[];tMap[r.Time].push(+r.Conc);});
-  return Object.entries(tMap).map(([t,cs])=>({t:+t,c:cs.reduce((a,b)=>a+b)/cs.length})).sort((a,b)=>a.t-b.t);
+  // If multiple or none, use first selected subject
+  if(sel.length>1) return getCADataForSubj(sel[0]);
+  return [];
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1387,25 +1462,68 @@ function getW(c,wt){
   if(wt==='1/sqrtC') return c>0?1/Math.sqrt(c):1;
   return 1;
 }
+// ── Smart initial parameter estimation from observed data ──
+function smartInitParams(data, def, dose){
+  const ts=data.map(d=>d.t), cs=data.map(d=>d.c);
+  let cmaxI=0; for(let i=1;i<cs.length;i++) if(cs[i]>cs[cmaxI]) cmaxI=i;
+  const cmax=cs[cmaxI], tmax=ts[cmaxI];
+  // Estimate terminal slope for k10
+  const lz=estLZ(ts,cs);
+  const k10_est = lz ? lz.lambda_z : 0.15;
+  // Estimate V1
+  const route=def.route;
+  let V1_est=30;
+  if(route==='iv-bolus'){
+    // C(0) ≈ dose/V1; use first point if close to t=0, else extrapolate
+    if(ts[0]<0.1) V1_est=Math.max(dose/Math.max(cs[0],0.001),1);
+    else V1_est=Math.max(dose/(cmax*Math.exp(k10_est*tmax)),1);
+  } else if(route==='iv-inf'){
+    // At end of infusion: Cmax ≈ (dose/tinf)/(k10*V1)*(1-exp(-k10*tinf))
+    V1_est=Math.max(dose/(cmax*k10_est),1);
+  } else {
+    // EV: V1/F ≈ dose*ka/((ka-k10)*V * ... ) - use simpler estimate
+    V1_est=Math.max(dose/(cmax*2),1);
+  }
+  const result={k10:k10_est, V1:V1_est};
+  if(route==='ev'){
+    // Ka: from Tmax, Ka = k10 + ln(Ka/k10)/(Tmax) -- iterative
+    // Simple estimate: Ka ≈ 2*k10 to 5*k10, pick based on Tmax
+    // tmax = ln(Ka/k10)/(Ka-k10), so Ka >> k10 gives tmax ≈ ln(Ka/k10)/Ka
+    const ka_est = tmax>0 ? Math.max(1.5*k10_est, 2/tmax) : 1.5;
+    result.ka = Math.min(Math.max(ka_est, 0.001), 20);
+  }
+  if(def.nc>=2){result.k12=k10_est*0.8;result.k21=k10_est*0.3;}
+  if(def.nc>=3){result.k13=k10_est*0.3;result.k31=k10_est*0.1;}
+  // Clamp to param bounds
+  def.params.forEach(pp=>{
+    if(result[pp.id]!==undefined){
+      result[pp.id]=Math.min(Math.max(result[pp.id],pp.mn),pp.mx);
+    }
+  });
+  return result;
+}
+
+// ── Core LM fitting (single start) ──
 function lvmFit(data,def,initP,wt,maxIter,dose,tinf){
   const pNames=def.params.map(p=>p.id);
   let p={...initP};
   const ws=data.map(d=>getW(d.c,wt));
   function predict(params){
-    const tGrid=[0,...data.map(d=>d.t)];
-    const concs=rk4Sim(tGrid,params,def.route,def.nc,dose,tinf,1,99999);
-    return data.map((_,i)=>concs[i+1]);
+    try{
+      const tGrid=[0,...data.map(d=>d.t)];
+      const concs=rk4Sim(tGrid,params,def.route,def.nc,dose,tinf,1,99999);
+      return data.map((_,i)=>Math.max(0,concs[i+1]));
+    }catch(e){return data.map(()=>0);}
   }
-  function wsse(params){
+  function wsseCalc(params){
     const pr=predict(params);
     return data.reduce((s,d,i)=>s+ws[i]*(d.c-pr[i])**2,0);
   }
-  let curW=wsse(p);let lam=.01;
+  let curW=wsseCalc(p); let lam=0.01; const eps=1e-5;
   for(let iter=0;iter<maxIter;iter++){
     const pr=predict(p);
     const res=data.map((d,i)=>d.c-pr[i]);
     const n=pNames.length;
-    const eps=1e-5;
     const J=data.map(()=>({}));
     pNames.forEach(name=>{
       const delta=Math.max(Math.abs(p[name])*eps,1e-6);
@@ -1422,36 +1540,82 @@ function lvmFit(data,def,initP,wt,maxIter,dose,tinf){
         pNames.forEach((pj,j)=>{JtWJ[i][j]+=ws[di]*J[di][pi]*J[di][pj];});
       });
     });
+    // Levenberg damping
     for(let i=0;i<n;i++) JtWJ[i][i]*=(1+lam);
     const delta=solveGE(JtWJ,JtWr);
-    if(!delta){lam=Math.min(lam*10,1e9);continue;}
+    if(!delta){lam=Math.min(lam*10,1e8);continue;}
     const np={...p};
     pNames.forEach((name,i)=>{
-      const def_p=def.params.find(pp=>pp.id===name);
-      np[name]=Math.max(p[name]+delta[i],def_p?def_p.mn:1e-6);
+      const pp=def.params.find(x=>x.id===name);
+      np[name]=Math.min(Math.max(p[name]+delta[i],pp?pp.mn:1e-6),pp?pp.mx:1e6);
     });
-    const nw=wsse(np);
-    if(nw<curW){p=np;curW=nw;lam=Math.max(lam/3,1e-9);}
-    else lam=Math.min(lam*10,1e9);
-    if(delta.every(d=>Math.abs(d)<1e-9)) break;
+    const nw=wsseCalc(np);
+    if(nw<curW){p=np;curW=nw;lam=Math.max(lam/5,1e-9);}
+    else{lam=Math.min(lam*10,1e8);}
+    if(delta.every(d=>Math.abs(d)<1e-10)) break;
   }
   const pr=predict(p);
   const res=data.map((d,i)=>d.c-pr[i]);
-  const n=data.length,np=pNames.length;
+  const nd=data.length,np2=pNames.length;
   const ssRes=res.reduce((s,r)=>s+r*r,0);
-  const mean=data.reduce((s,d)=>s+d.c,0)/n;
+  const mean=data.reduce((s,d)=>s+d.c,0)/nd;
   const ssTot=data.reduce((s,d)=>s+(d.c-mean)**2,0);
-  const r2=1-ssRes/ssTot;
-  const aic=n*Math.log(Math.max(curW/n,1e-300))+2*np;
-  const bic=n*Math.log(Math.max(curW/n,1e-300))+np*Math.log(n);
-  const rmse=Math.sqrt(ssRes/Math.max(n-np,1));
+  const r2=Math.max(-10,1-ssRes/Math.max(ssTot,1e-300));
+  const aic=nd*Math.log(Math.max(curW/nd,1e-300))+2*np2;
+  const bic=nd*Math.log(Math.max(curW/nd,1e-300))+np2*Math.log(nd);
+  const rmse=Math.sqrt(ssRes/Math.max(nd-np2,1));
   return{params:p,wsse:curW,r2,aic,bic,rmse,pred:pr,res,ws};
+}
+
+// ── Multi-start: run LM from several initial points, return best ──
+function lvmFitMultiStart(data,def,initP,wt,maxIter,dose,tinf){
+  const pNames=def.params.map(p=>p.id);
+  const STARTS=6; // number of random starts plus the given start
+  const ws=data.map(d=>getW(d.c,wt));
+  function wsseCalc(params){
+    try{
+      const tGrid=[0,...data.map(d=>d.t)];
+      const concs=rk4Sim(tGrid,params,def.route,def.nc,dose,tinf,1,99999);
+      const pr=data.map((_,i)=>Math.max(0,concs[i+1]));
+      return data.reduce((s,d,i)=>s+ws[i]*(d.c-pr[i])**2,0);
+    }catch(e){return Infinity;}
+  }
+  // Generate start points
+  const startPts=[{...initP}];
+  for(let s=1;s<STARTS;s++){
+    const sp={};
+    def.params.forEach(pp=>{
+      // Random perturbation in log space: multiply by random factor 0.2x to 5x
+      const logRange=Math.log(5);
+      const factor=Math.exp((Math.random()*2-1)*logRange);
+      sp[pp.id]=Math.min(Math.max(initP[pp.id]*factor,pp.mn),pp.mx);
+    });
+    startPts.push(sp);
+  }
+  // Fit from each start, keep best
+  let bestFit=null, bestWsse=Infinity;
+  for(const sp of startPts){
+    try{
+      const fit=lvmFit(data,def,sp,wt,Math.ceil(maxIter/STARTS),dose,tinf);
+      if(fit.wsse<bestWsse&&isFinite(fit.wsse)){
+        bestWsse=fit.wsse;bestFit=fit;
+      }
+    }catch(e){}
+  }
+  // Polish best result with more iterations
+  if(bestFit){
+    try{
+      const polished=lvmFit(data,def,bestFit.params,wt,maxIter,dose,tinf);
+      if(polished.wsse<=bestFit.wsse) bestFit=polished;
+    }catch(e){}
+  }
+  return bestFit || lvmFit(data,def,initP,wt,maxIter,dose,tinf);
 }
 
 function runCA(wtOverride){
   if(!G.data){notify('请先加载数据','warn');return;}
-  const data=getCAData();
-  if(data.length<3){notify('有效数据点不足（至少3个）','warn');return;}
+  const subs=getSelectedSubjs();
+  if(!subs.length){notify('请至少勾选一名受试者','warn');return;}
   const key=getCAKey();
   const def=CA_DEFS[key];if(!def){notify('未知模型','err');return;}
   const dose=+document.getElementById('ca-dose').value||100;
@@ -1460,31 +1624,75 @@ function runCA(wtOverride){
   const maxIter=+document.getElementById('ca-maxiter').value||600;
   const initP={};
   def.params.forEach(pp=>{const el=document.getElementById('cp-'+pp.id);initP[pp.id]=el?+el.value:pp.d;});
-  document.getElementById('ca-pg').style.width='20%';
-  notify(`拟合中 [${def.label}][${wt}]...`,'info');
-  setTimeout(()=>{
-    try{
-      const fit=lvmFit(data,def,initP,wt,maxIter,dose,tinf);
-      G.caResult={fit,data,def,key,dose,tinf,wt};
-      G.caHistory.push({label:def.label,wt,r2:fit.r2,aic:fit.aic,bic:fit.bic,
-        rmse:fit.rmse,wsse:fit.wsse,params:fit.params,def,dose,tinf,data});
+  document.getElementById('ca-pg').style.width='10%';
+  notify(`开始对 ${subs.length} 名受试者逐个拟合 [${def.label}][${wt}]...`,'info');
+  const results=[];
+  let idx=0;
+  function fitNext(){
+    if(idx>=subs.length){
       document.getElementById('ca-pg').style.width='100%';
       setTimeout(()=>document.getElementById('ca-pg').style.width='0',700);
-      renderCAFit();renderCAParams();renderCADiag();renderCACmp();
+      // Store all results; display last one as primary, all in compare
+      const last=results[results.length-1];
+      G.caResult={...last};
+      G.caResultBatch=results;
+      results.forEach(r=>{G.caHistory.push({label:`${def.label} [${r.subj}]`,wt,
+        r2:r.fit.r2,aic:r.fit.aic,bic:r.fit.bic,rmse:r.fit.rmse,wsse:r.fit.wsse,
+        params:r.fit.params,def,dose,tinf,data:r.data,subj:r.subj});});
+      renderCAFit();renderCAParams();renderCADiag();renderCACmp();renderCABatchTable();
       caTab('fit');
-      notify(`拟合完成 [${wt}] R²=${fit.r2.toFixed(4)} AIC=${fit.aic.toFixed(2)}`,'ok');
-    }catch(e){
-      document.getElementById('ca-pg').style.width='0';
-      notify('拟合失败：'+e.message,'err');console.error(e);
+      notify(`全部拟合完成：${subs.length}名受试者`,'ok');
+      return;
     }
-  },12);
+    const subj=subs[idx];
+    const data=getCADataForSubj(subj);
+    document.getElementById('ca-pg').style.width=((idx+1)/subs.length*90+5)+'%';
+    if(data.length<3){notify(`${subj}: 数据点不足，跳过`,'warn');idx++;setTimeout(fitNext,10);return;}
+    try{
+      // Smart initial values from data
+      const smartP=smartInitParams(data,def,dose);
+      const mergedP={...initP,...smartP};
+      const fit=lvmFitMultiStart(data,def,mergedP,wt,maxIter,dose,tinf);
+      results.push({subj,fit,data,def,key,dose,tinf,wt});
+      notify(`${subj}: R²=${fit.r2.toFixed(4)}`,'ok');
+    }catch(e){notify(`${subj}: 拟合失败 - ${e.message}`,'err');}
+    idx++;
+    setTimeout(fitNext,20);
+  }
+  fitNext();
 }
 function runAllWts(){
   if(!G.data){notify('请先加载数据','warn');return;}
+  const subs=getSelectedSubjs();
+  if(!subs.length){notify('请至少勾选一名受试者','warn');return;}
+  // For weight comparison: use only first selected subject to keep it fast
+  const subj=subs[0];
+  const data=getCADataForSubj(subj);
+  if(data.length<3){notify('数据点不足','warn');return;}
+  const key=getCAKey();
+  const def=CA_DEFS[key];if(!def) return;
+  const dose=+document.getElementById('ca-dose').value||100;
+  const tinf=+document.getElementById('ca-tinf').value||1;
+  const maxIter=+document.getElementById('ca-maxiter').value||600;
+  const initP={};def.params.forEach(pp=>{const el=document.getElementById('cp-'+pp.id);initP[pp.id]=el?+el.value:pp.d;});
+  const smartP=smartInitParams(data,def,dose);
+  const mergedP={...initP,...smartP};
   let i=0;const wts=['uniform','1/C','1/C2','1/sqrtC'];
-  notify('开始比较4种加权方案...','info');
-  function next(){if(i>=wts.length){renderCACmp();caTab('cmp');notify('全部权重比较完成','ok');return;}
-    setTimeout(()=>{runCA(wts[i++]);setTimeout(next,200);},50);}
+  notify(`对 [${subj}] 比较4种加权方案...`,'info');
+  function next(){
+    if(i>=wts.length){renderCACmp();caTab('cmp');notify('全部权重比较完成','ok');return;}
+    const wt=wts[i++];
+    setTimeout(()=>{
+      try{
+        const fit=lvmFitMultiStart(data,def,mergedP,wt,maxIter,dose,tinf);
+        G.caResult={fit,data,def,key,dose,tinf,wt,subj};
+        G.caHistory.push({label:`${def.label} [${subj}]`,wt,r2:fit.r2,aic:fit.aic,bic:fit.bic,
+          rmse:fit.rmse,wsse:fit.wsse,params:fit.params,def,dose,tinf,data,subj});
+        renderCAFit();
+      }catch(e){notify(`${wt}拟合失败`,'err');}
+      next();
+    },20);
+  }
   next();
 }
 
@@ -1520,14 +1728,17 @@ function renderCAFit(){
   let fConcs;
   try{fConcs=rk4Sim([0,...tGrid],fit.params,def.route,def.nc,dose,tinf,1,99999).slice(1);}
   catch(e){fConcs=new Array(201).fill(0);}
+  const caScale=document.getElementById('ca-yscale')?.value||'linear';
+  const obsData=data.filter(d=>caScale!=='log'||d.c>0).map(d=>({x:d.t,y:d.c}));
+  const fitData=tGrid.map((t,i)=>({x:t,y:(caScale!=='log'||fConcs[i]>0)?fConcs[i]:null}));
   dKill('caFit');
   G.charts['caFit']=new Chart(document.getElementById('ca-fit-cv'),{type:'scatter',data:{datasets:[
-    {label:'观测值',data:data.map(d=>({x:d.t,y:d.c})),backgroundColor:'rgba(0,212,255,.85)',pointRadius:6},
-    {label:'拟合曲线',data:tGrid.map((t,i)=>({x:t,y:fConcs[i]})),type:'line',
+    {label:'观测值',data:obsData,backgroundColor:'rgba(0,212,255,.85)',pointRadius:6},
+    {label:'拟合曲线',data:fitData,type:'line',
      borderColor:'rgba(245,158,11,.9)',borderWidth:2.5,pointRadius:0,tension:.3,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,scales:{
     x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-    y:{title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+    y:{type:caScale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
   },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
 
   const nca=caFittedNCA(data,fit,def,dose,tinf);
@@ -1554,38 +1765,6 @@ function renderCAParams(){
   const cu=document.getElementById('nca-cu')?.value||'ng/mL';
   const tu=document.getElementById('nca-tu')?.value||'h';
   const nca=caFittedNCA(data,fit,def,dose,tinf);
-  let derivHTML='';
-  if(def.nc>=2&&!def.route.includes('ev')){
-    const k12=p.k12||0,k21=p.k21||0;
-    const disc=(k10+k12+k21)**2-4*k10*k21;
-    if(disc>=0){
-      const alpha=(k10+k12+k21+Math.sqrt(disc))/2;
-      const beta=(k10+k12+k21-Math.sqrt(disc))/2;
-      derivHTML=`<div class="sep"></div>
-        <div class="sbh" style="margin-bottom:6px">派生参数</div>
-        <div class="rcg">
-          <div class="rc"><div class="rl">α (h⁻¹)</div><div class="rv">${alpha.toFixed(5)}</div></div>
-          <div class="rc"><div class="rl">β (h⁻¹)</div><div class="rv">${beta.toFixed(5)}</div></div>
-          <div class="rc"><div class="rl">t½α (h)</div><div class="rv">${(Math.LN2/alpha).toFixed(4)}</div></div>
-          <div class="rc"><div class="rl">t½β (h)</div><div class="rv">${(Math.LN2/beta).toFixed(4)}</div></div>
-          <div class="rc"><div class="rl">CL (L/h)</div><div class="rv">${(k10*V1).toFixed(4)}</div></div>
-        </div>`;
-    }
-  } else if(def.nc===1){
-    const tH=Math.LN2/k10,CL=k10*V1;
-    let extra='';
-    if(def.route==='ev'&&p.ka){
-      const tmt=Math.abs(p.ka-k10)>1e-5?Math.log(p.ka/k10)/(p.ka-k10):0;
-      extra=`<div class="rc"><div class="rl">Tmax理论</div><div class="rv">${tmt.toFixed(4)}</div></div>`;
-    }
-    derivHTML=`<div class="sep"></div>
-      <div class="sbh" style="margin-bottom:6px">派生参数</div>
-      <div class="rcg">
-        <div class="rc"><div class="rl">t½ (h)</div><div class="rv">${tH.toFixed(4)}</div></div>
-        <div class="rc"><div class="rl">CL/F (L/h)</div><div class="rv">${CL.toFixed(4)}</div></div>
-        ${extra}
-      </div>`;
-  }
   document.getElementById('ca-params-wrap').innerHTML=`
     <div class="sh"><h2>${def.label} — 拟合参数</h2><span class="badge b-ok">权重:${G.caResult.wt}</span></div>
     ${nca?`<div class="rcg" style="margin-bottom:10px">
@@ -1604,7 +1783,6 @@ function renderCAParams(){
         <td style="font-family:var(--sans);color:var(--mu)">${(pp?.l||'').split('(')[0].trim()}</td>
       </tr>`;}).join('')}
     </tbody></table></div>
-    ${derivHTML}
     <div class="ib" style="margin-top:8px;font-size:9px">
       拟合：Levenberg-Marquardt | 权重：${G.caResult.wt} | RK4数值积分ODE | NCA参数基于拟合曲线计算
     </div>`;
@@ -1652,7 +1830,58 @@ function renderCACmp(){
       <td>${best?'<span class="badge b-ok">✓ 最优</span>':''}</td></tr>`;
   });
   html+='</tbody></table></div></div>';
+
   document.getElementById('ca-cmp-wrap').innerHTML=html;
+}
+
+// ── Render batch individual results table ──
+function renderCABatchTable(){
+  const batch=G.caResultBatch;
+  if(!batch||batch.length===0) return;
+  const cu=document.getElementById('nca-cu')?.value||'ng/mL';
+  const tu=document.getElementById('nca-tu')?.value||'h';
+  // Build NCA params for each subject from their fit
+  const rows=batch.map(r=>{
+    const nca=caFittedNCA(r.data,r.fit,r.def,r.dose,r.tinf);
+    return{subj:r.subj,fit:r.fit,nca};
+  });
+  const pNames=batch[0].def.params.map(p=>p.id);
+  let html=`<div class="sh" style="margin-top:12px"><h2>全部受试者拟合汇总</h2></div>
+  <div class="tw"><div class="ts"><table class="pt"><thead><tr>
+    <th>受试者</th><th>R²</th><th>RMSE</th>
+    <th>Cmax(拟合)</th><th>Tmax</th><th>AUC₀₋t</th><th>AUC₀₋∞</th><th>t½</th>
+    ${pNames.map(n=>`<th>${n}</th>`).join('')}
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    html+=`<tr><td style="font-weight:600">${r.subj}</td>
+      <td>${r.fit.r2.toFixed(4)}</td><td>${r.fit.rmse.toFixed(4)}</td>
+      <td>${r.nca?fmt(r.nca.cmax,3):'—'}</td><td>${r.nca?fmt(r.nca.tmax,2):'—'}</td>
+      <td>${r.nca?fmt(r.nca.auc0t,2):'—'}</td><td>${r.nca?fmt(r.nca.auc0inf,2):'—'}</td>
+      <td>${r.nca?fmt(r.nca.t_half,3):'—'}</td>
+      ${pNames.map(n=>`<td>${fmt(r.fit.params[n],5)}</td>`).join('')}
+    </tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  // Append to params tab
+  const pw=document.getElementById('ca-params-wrap');
+  if(pw) pw.innerHTML+=html;
+  // Also update compare tab
+  const cw=document.getElementById('ca-cmp-wrap');
+  if(cw) cw.innerHTML+=html;
+}
+
+// ── Re-render CA fit chart with new scale ──
+function reRenderCAFit(){
+  if(!G.caResult) return;
+  renderCAFit();
+}
+
+// ── Sync units from data management to NCA page ──
+function syncUnits(){
+  const tu=document.getElementById('dm-tu')?.value;
+  const cu=document.getElementById('dm-cu')?.value;
+  if(tu){const el=document.getElementById('nca-tu');if(el)el.value=tu;}
+  if(cu){const el=document.getElementById('nca-cu');if(el)el.value=cu;}
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1926,6 +2155,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('rpt-date').value=new Date().toISOString().split('T')[0];
   updateCAModel();
   updateSim();runSim();
+  // sync units from data management
+  syncUnits();
   document.querySelectorAll('.mo').forEach(el=>{
     el.addEventListener('click',e=>{if(e.target===el) el.classList.remove('show');});
   });
