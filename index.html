@@ -3,1978 +3,1935 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PharmCloud PK · 中南大学药动学分析平台</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>PharmCloud PK · 中南大学湘雅药学院</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 :root{
-  --bg:#05080f;--surface:#0d1117;--panel:#111827;--border:rgba(255,255,255,0.07);
-  --accent:#00d4ff;--accent2:#7c3aed;--accent3:#10b981;--warn:#f59e0b;--danger:#ef4444;
-  --text:#e2e8f0;--muted:#64748b;
-  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Syne',sans-serif;
+  --bg:#05080f;--surf:#0d1117;--panel:#111827;--bdr:rgba(255,255,255,.08);
+  --ac:#00d4ff;--ac2:#7c3aed;--ac3:#10b981;--warn:#f59e0b;--err:#ef4444;
+  --txt:#e2e8f0;--mu:#64748b;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--disp:'Syne',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;overflow-x:hidden}
+html{height:100%}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;height:100%;overflow:hidden}
 ::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-track{background:var(--surf)}
 ::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
-.app{display:grid;grid-template-rows:60px 1fr;min-height:100vh}
+
+/* APP SHELL */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
 /* NAV */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;height:56px;background:var(--surf);border-bottom:1px solid var(--bdr);z-index:100}
 .nav-brand{display:flex;align-items:center;gap:10px}
-.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
-.nav-title{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-0.3px;line-height:1.2}
-.nav-title span{color:var(--accent)}
-.nav-title small{display:block;font-size:10px;color:var(--muted);font-family:var(--sans);font-weight:400;letter-spacing:0}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,var(--ac),var(--ac2));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--disp);font-weight:800;font-size:12px;color:#fff;flex-shrink:0}
+.nav-ttl{font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.2}
+.nav-ttl span{color:var(--ac)}
+.nav-ttl small{display:block;font-size:9px;color:var(--mu);font-family:var(--sans);font-weight:400}
 .nav-tabs{display:flex;gap:2px}
-.nav-tab{padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--sans);transition:all .18s;white-space:nowrap}
-.nav-tab:hover{color:var(--text);background:rgba(255,255,255,0.05)}
-.nav-tab.active{color:var(--accent);background:rgba(0,212,255,0.08);font-weight:500}
-.nav-right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
-.csu-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:20px;color:#a78bfa;font-size:11px;font-weight:500}
-/* LAYOUT */
-.page{display:none;height:calc(100vh - 60px);overflow:hidden}
-.page.active{display:flex;flex-direction:column}
-.analysis-layout{flex:1;display:grid;grid-template-columns:272px 1fr;overflow:hidden}
-.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
-.sidebar-section{padding:14px;border-bottom:1px solid var(--border)}
-.sidebar-title{font-size:9px;font-weight:600;letter-spacing:1.8px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
-.main-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
-.toolbar{padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:44px}
-.content-area{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
-/* BTNS */
-.btn{padding:6px 13px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:500;transition:all .18s;display:inline-flex;align-items:center;gap:5px}
-.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,0.18)}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;font-weight:600}
-.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
-.btn-success{background:linear-gradient(135deg,var(--accent3),#059669);color:#fff;font-weight:600}
-.btn-run{width:100%;justify-content:center;padding:10px;font-size:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700;border-radius:8px;border:none;cursor:pointer;transition:all .2s}
-.btn-run:hover{opacity:.9;transform:translateY(-1px)}
-.btn-sm{padding:4px 9px;font-size:11px}
+.nt{padding:5px 9px;border-radius:5px;border:none;background:transparent;color:var(--mu);
+  font-size:11px;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap}
+.nt:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+.nt.active{color:var(--ac);background:rgba(0,212,255,.08);font-weight:600}
+.csu-tag{display:flex;align-items:center;gap:4px;padding:3px 9px;
+  background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);
+  border-radius:20px;color:#a78bfa;font-size:10px;font-weight:500}
+
+/* PAGES - fill remaining height */
+.page{display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+
+/* HOME: scrollable */
+#page-home.active{overflow-y:auto}
+.home-wrap{padding:36px 28px;display:flex;flex-direction:column;align-items:center;
+  text-align:center;min-height:calc(100vh - 56px);position:relative}
+.hbg{position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(0,212,255,.05) 0%,transparent 65%);
+  pointer-events:none}
+.hgrid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 13px;
+  background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);
+  border-radius:20px;font-size:10px;color:#a78bfa;margin-bottom:18px;font-family:var(--mono)}
+.hero-title{font-family:var(--disp);font-size:44px;font-weight:800;letter-spacing:-2px;
+  line-height:1.1;margin-bottom:28px;position:relative;z-index:1}
+.hero-title span{background:linear-gradient(130deg,var(--ac),var(--ac2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  margin-bottom:44px;position:relative;z-index:1}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;max-width:800px;width:100%;position:relative;z-index:1;margin:0 auto}
+.fc{background:var(--panel);border:1px solid var(--bdr);border-radius:12px;
+  padding:16px;text-align:left;cursor:pointer;transition:all .18s}
+.fc:hover{border-color:rgba(0,212,255,.28);transform:translateY(-2px)}
+.fci{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;margin-bottom:8px;font-size:14px}
+.fc h3{font-family:var(--disp);font-size:12px;font-weight:700;margin-bottom:4px}
+.fc p{color:var(--mu);font-size:10px;line-height:1.6}
+.home-footer{margin-top:36px;font-size:10px;color:var(--mu);position:relative;z-index:1}
+
+/* ANALYSIS LAYOUT */
+.al{flex:1;display:grid;grid-template-columns:264px 1fr;min-height:0;overflow:hidden}
+.sb{background:var(--surf);border-right:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column}
+.sbs{padding:12px 13px;border-bottom:1px solid var(--bdr)}
+.sbh{font-size:9px;font-weight:600;letter-spacing:1.8px;color:var(--mu);
+  text-transform:uppercase;margin-bottom:8px}
+.main{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column}
+.tb-bar{flex-shrink:0;padding:6px 12px;background:var(--surf);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:40px}
+.ca{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:11px}
+
+/* BUTTONS */
+.btn{padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-size:11px;
+  font-family:var(--sans);font-weight:500;transition:all .15s;
+  display:inline-flex;align-items:center;gap:4px}
+.btn-g{background:transparent;color:var(--mu);border:1px solid var(--bdr)}
+.btn-g:hover{color:var(--txt);border-color:rgba(255,255,255,.2)}
+.btn-p{background:linear-gradient(135deg,var(--ac),#0099cc);color:#000;font-weight:700}
+.btn-p:hover{opacity:.88;transform:translateY(-1px)}
+.btn-ok{background:linear-gradient(135deg,var(--ac3),#059669);color:#fff;font-weight:600}
+.btn-r{width:100%;justify-content:center;padding:9px;font-size:12px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;font-weight:700;
+  border-radius:7px;border:none;cursor:pointer;transition:all .18s}
+.btn-r:hover{opacity:.9;transform:translateY(-1px)}
+.btn-sm{padding:3px 8px;font-size:10px}
+.btn-cmp{background:rgba(124,58,237,.12);color:#a78bfa;border:1px solid rgba(124,58,237,.3);
+  width:100%;justify-content:center;padding:7px;font-size:10px;margin-top:5px}
+.btn-cmp:hover{background:rgba(124,58,237,.22)}
+
 /* FORM */
-.form-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-.form-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px}
-.form-input,.form-select{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:5px;padding:6px 9px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;width:100%;transition:border .18s}
-.form-input:focus,.form-select:focus{border-color:rgba(0,212,255,0.35)}
-.form-select option{background:#1e293b;color:var(--text)}
-textarea.form-input{resize:vertical;min-height:100px;line-height:1.55}
-/* PARAM GRID */
-.param-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.param-grid .form-row{margin-bottom:0}
-/* TABS */
-.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border)}
-.tab-btn{padding:9px 16px;font-size:12px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s}
-.tab-btn:hover{color:var(--text)}
-.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
-.tab-content{display:none}.tab-content.active{display:block}
+.fr{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.fl{font-size:9px;color:var(--mu);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.fi,.fs{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:5px;
+  padding:5px 8px;color:var(--txt);font-size:11px;font-family:var(--mono);
+  outline:none;width:100%;transition:border .15s}
+.fi:focus,.fs:focus{border-color:rgba(0,212,255,.35)}
+.fs option{background:#1e293b;color:var(--txt)}
+textarea.fi{resize:vertical;min-height:80px;line-height:1.5}
+.pg2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.pg2 .fr{margin-bottom:0}
+
+/* INNER TABS */
+.itab-bar{display:flex;border-bottom:1px solid var(--bdr)}
+.itb{padding:8px 13px;font-size:11px;border:none;background:transparent;color:var(--mu);
+  cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all .15s}
+.itb:hover{color:var(--txt)}.itb.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.itc{display:none;padding:13px 0}.itc.active{display:block}
+
 /* CHARTS */
-.chart-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
-.chart-title{font-size:12px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;color:var(--text)}
-.chart-canvas-wrap{position:relative}
+.cw{background:var(--panel);border:1px solid var(--bdr);border-radius:9px;padding:12px}
+.ct{font-size:11px;font-weight:600;margin-bottom:8px;display:flex;
+  align-items:center;justify-content:space-between;color:var(--txt)}
+
 /* TABLES */
-.data-table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.table-scroll{overflow:auto;max-height:340px}
-.pk-table{width:100%;border-collapse:collapse;font-size:11px}
-.pk-table th{background:rgba(255,255,255,0.04);padding:7px 10px;text-align:left;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-family:var(--sans);font-weight:600}
-.pk-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:var(--mono);color:var(--text)}
-.pk-table tr:hover td{background:rgba(255,255,255,0.02)}
-.pk-table tr:last-child td{border-bottom:none}
-.pk-table .hl td{color:var(--accent)}
-.pk-table .stat-row td{background:rgba(0,212,255,0.03)}
+.tw{background:var(--panel);border:1px solid var(--bdr);border-radius:9px;overflow:hidden}
+.ts{overflow:auto;max-height:280px}
+.pt{width:100%;border-collapse:collapse;font-size:10px}
+.pt th{background:rgba(255,255,255,.04);padding:6px 8px;text-align:left;
+  font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mu);
+  border-bottom:1px solid var(--bdr);white-space:nowrap;font-family:var(--sans);font-weight:600}
+.pt td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.025);
+  font-family:var(--mono);color:var(--txt)}
+.pt tr:hover td{background:rgba(255,255,255,.02)}
+.pt tr:last-child td{border-bottom:none}
+.pt .hl td{color:var(--ac)}
+.pt .sr td{background:rgba(0,212,255,.03)}
+
 /* RESULT CARDS */
-.rcard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
-.rcard{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:12px}
-.rcard-lbl{font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:500}
-.rcard-val{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--accent);line-height:1.2}
-.rcard-unit{font-size:10px;color:var(--muted);margin-top:2px}
+.rcg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px}
+.rc{background:var(--panel);border:1px solid var(--bdr);border-radius:8px;padding:10px}
+.rl{font-size:9px;color:var(--mu);margin-bottom:2px;font-weight:500}
+.rv{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--ac);line-height:1.2}
+.ru{font-size:9px;color:var(--mu);margin-top:1px}
+
 /* BADGES */
-.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
-.badge-ok{background:rgba(16,185,129,.1);color:var(--accent3);border:1px solid rgba(16,185,129,.2)}
-.badge-warn{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
-.badge-info{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2)}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;
+  border-radius:20px;font-size:9px;font-weight:500}
+.b-ok{background:rgba(16,185,129,.1);color:var(--ac3);border:1px solid rgba(16,185,129,.2)}
+.b-info{background:rgba(0,212,255,.1);color:var(--ac);border:1px solid rgba(0,212,255,.2)}
+.b-warn{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+
 /* INFO BOXES */
-.info-box{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:10px 12px;font-size:11px;color:rgba(224,242,254,.8);line-height:1.65}
-.warn-box{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;font-size:11px;color:rgba(253,230,138,.9);line-height:1.65}
-.sep{height:1px;background:var(--border);margin:10px 0}
-.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.section-hdr h2{font-family:var(--display);font-size:14px;font-weight:700}
+.ib{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);
+  border-radius:7px;padding:8px 10px;font-size:10px;color:rgba(224,242,254,.8);line-height:1.65}
+.wb{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);
+  border-radius:7px;padding:8px 10px;font-size:10px;color:rgba(253,230,138,.9);line-height:1.65}
+.sep{height:1px;background:var(--bdr);margin:8px 0}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sh h2{font-family:var(--disp);font-size:13px;font-weight:700}
+
 /* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;width:560px;max-width:92vw;max-height:86vh;overflow-y:auto}
-.modal-title{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
-.xbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:0}
-.xbtn:hover{color:var(--text)}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:200;align-items:center;justify-content:center}
+.mo.show{display:flex}
+.md{background:var(--panel);border:1px solid var(--bdr);border-radius:12px;
+  padding:20px;width:560px;max-width:93vw;max-height:87vh;overflow-y:auto}
+.md-ttl{font-family:var(--disp);font-size:14px;font-weight:700;margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center}
+.xb{background:none;border:none;color:var(--mu);cursor:pointer;font-size:18px;line-height:1}
+.xb:hover{color:var(--txt)}
+
 /* PROGRESS */
-.progress-bar{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-top:8px}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease;width:0%}
-/* NOTIF */
-.notif-container{position:fixed;top:68px;right:16px;z-index:300;display:flex;flex-direction:column;gap:7px;max-width:320px}
-.notif-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;display:flex;align-items:flex-start;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:nSlide .28s ease}
-@keyframes nSlide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-/* SLIDER */
-.slider-wrap{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
-.slider-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
-.slider-lbl span:last-child{color:var(--accent);font-family:var(--mono)}
-input[type=range]{width:100%;accent-color:var(--accent);height:4px}
-/* HOME PAGE */
-.home-page{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;position:relative;overflow:hidden}
-.home-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 55% at 50% 0%,rgba(0,212,255,0.055) 0%,transparent 70%)}
-.home-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:44px 44px}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);border-radius:20px;font-size:11px;color:#a78bfa;margin-bottom:22px;font-family:var(--mono)}
-.hero-title{font-family:var(--display);font-size:48px;font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:14px}
-.hero-title span{background:linear-gradient(130deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero-sub{color:var(--muted);font-size:15px;max-width:500px;line-height:1.72;margin-bottom:36px}
-.hero-ctas{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:50px}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:780px;width:100%;position:relative;z-index:1}
-.feat-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:left;cursor:pointer;transition:all .18s}
-.feat-card:hover{border-color:rgba(0,212,255,.28);transform:translateY(-2px)}
-.feat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:16px}
-.feat-card h3{font-family:var(--display);font-size:13px;font-weight:700;margin-bottom:5px}
-.feat-card p{color:var(--muted);font-size:11px;line-height:1.65}
+.pbar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-top:6px}
+.pfill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));
+  border-radius:2px;transition:width .35s;width:0}
+
+/* NOTIFICATIONS */
+.nc{position:fixed;top:62px;right:13px;z-index:300;display:flex;flex-direction:column;gap:5px;max-width:300px}
+.ni{background:var(--panel);border:1px solid var(--bdr);border-radius:7px;
+  padding:8px 12px;font-size:11px;display:flex;align-items:flex-start;gap:6px;
+  box-shadow:0 6px 18px rgba(0,0,0,.4);animation:ns .22s ease}
+@keyframes ns{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
 /* UPLOAD ZONE */
-.upload-zone{border:2px dashed var(--border);border-radius:9px;padding:28px;text-align:center;cursor:pointer;transition:all .18s;margin-bottom:10px}
-.upload-zone:hover,.upload-zone.drag-over{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.025)}
-/* SIM LAYOUT */
-.sim-layout{flex:1;display:grid;grid-template-columns:260px 1fr;overflow:hidden}
-/* FOOTER */
-.page-footer{padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);font-size:10px;color:var(--muted);text-align:center}
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 rgba(0,212,255,0)}50%{box-shadow:0 0 18px rgba(0,212,255,.18)}}
-.pulse{animation:pulse-glow 2.2s ease infinite}
+.uz{border:2px dashed var(--bdr);border-radius:8px;padding:20px;text-align:center;
+  cursor:pointer;transition:all .15s;margin-bottom:8px}
+.uz:hover,.uz.drag{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.025)}
+
+/* SLIDERS */
+.sw{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.sl{display:flex;justify-content:space-between;font-size:9px;color:var(--mu)}
+.sl span:last-child{color:var(--ac);font-family:var(--mono)}
+input[type=range]{width:100%;accent-color:var(--ac)}
+
+/* COL MAPPING */
+.cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.cm-card{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:6px;padding:8px}
+.cm-l{font-size:8px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--mu);margin-bottom:4px}
+
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(0,212,255,0)}50%{box-shadow:0 0 16px rgba(0,212,255,.18)}}
+.pulse{animation:pulse 2.2s ease infinite}
 </style>
 </head>
 <body>
 <div class="app">
-<!-- ═══════════════ NAV ═══════════════ -->
+<!-- NAV -->
 <nav class="nav">
   <div class="nav-brand">
-    <div class="logo-mark">PK</div>
-    <div class="nav-title">
-      PharmCloud <span>PK</span>
-      <small>中南大学 · 药动学分析平台</small>
-    </div>
+    <div class="logo">PK</div>
+    <div class="nav-ttl">PharmCloud <span>PK</span><small>中南大学湘雅药学院</small></div>
   </div>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('home')">首页</button>
-    <button class="nav-tab" onclick="showPage('nca')">非房室分析 NCA</button>
-    <button class="nav-tab" onclick="showPage('ca')">房室模型分析</button>
-    <button class="nav-tab" onclick="showPage('sim')">PK 模拟</button>
-    <button class="nav-tab" onclick="showPage('report')">报告输出</button>
+    <button class="nt active" onclick="go('home')">首页</button>
+    <button class="nt" onclick="go('data')">数据管理</button>
+    <button class="nt" onclick="go('nca')">NCA 非房室</button>
+    <button class="nt" onclick="go('ca')">房室模型</button>
+    <button class="nt" onclick="go('sim')">PK 模拟</button>
+    <button class="nt" onclick="go('report')">报告输出</button>
   </div>
-  <div class="nav-right">
-    <div class="csu-badge">🎓 中南大学</div>
-    <button class="btn btn-ghost btn-sm" onclick="showAbout()">算法说明</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="csu-tag">🎓 湘雅药学院</div>
+    <button class="btn btn-g btn-sm" onclick="openMo('mo-about')">算法说明</button>
   </div>
 </nav>
 
-<!-- ═══════════════ HOME ═══════════════ -->
+<!-- ═══════════ HOME ═══════════ -->
 <div id="page-home" class="page active">
-  <div class="home-page">
-    <div class="home-bg"></div><div class="home-grid"></div>
-    <div style="position:relative;z-index:1;width:100%">
-      <div class="hero-badge">⚗️ 中南大学湘雅药学院 · PharmCloud PK v2.0</div>
-      <div class="hero-title">专业级<span>药代动力学</span><br>云分析平台</div>
-      <div class="hero-sub">线性梯形法 / 线性升-对数降AUC计算 · Levenberg-Marquardt多房室精准拟合<br>从数据到Word报告，一站式完成完整PK分析</div>
-      <div class="hero-ctas">
-        <button class="btn btn-primary" style="padding:9px 22px;font-size:14px" onclick="showPage('nca')">🔬 开始NCA分析</button>
-        <button class="btn btn-ghost" style="padding:9px 22px;font-size:14px" onclick="showPage('sim')">📊 PK模拟</button>
-        <button class="btn btn-ghost" style="padding:9px 22px;font-size:14px" onclick="loadDemo()">🧪 示例数据</button>
+  <div class="home-wrap">
+    <div class="hbg"></div><div class="hgrid"></div>
+    <div class="hero-badge">⚗️ 中南大学湘雅药学院 · PharmCloud PK v3.0</div>
+    <div class="hero-title">专业级<span>药代动力学</span><br>云分析平台</div>
+    <div class="hero-btns">
+      <button class="btn btn-p" style="padding:8px 20px;font-size:13px" onclick="go('data')">📂 导入数据</button>
+      <button class="btn btn-g" style="padding:8px 20px;font-size:13px" onclick="loadDemo();go('nca')">🧪 示例数据</button>
+      <button class="btn btn-g" style="padding:8px 20px;font-size:13px" onclick="go('sim')">📊 PK模拟</button>
+    </div>
+    <div class="feat-grid">
+      <div class="fc" onclick="go('data')"><div class="fci" style="background:rgba(0,212,255,.1)">📂</div><h3>数据管理</h3><p>导入CSV/粘贴数据，自定义列映射，探索性分析，浓度-时间可视化</p></div>
+      <div class="fc" onclick="go('nca')"><div class="fci" style="background:rgba(124,58,237,.1)">📈</div><h3>非房室分析 NCA</h3><p>线性梯形法（默认）与线性升-对数降法，完整计算Cmax、Tmax、t½、λz、CL/F等NCA参数</p></div>
+      <div class="fc" onclick="go('ca')"><div class="fci" style="background:rgba(16,185,129,.1)">🏠</div><h3>房室模型分析</h3><p>IV推注/滴注/血管外 × 一/二/三室，多权重LM拟合，AIC模型比较</p></div>
+      <div class="fc" onclick="go('sim')"><div class="fci" style="background:rgba(245,158,11,.1)">🎛️</div><h3>交互式PK模拟</h3><p>实时滑块调参，多给药途径×房室组合，多剂量稳态模拟</p></div>
+      <div class="fc" onclick="go('report')"><div class="fci" style="background:rgba(239,68,68,.1)">📄</div><h3>Word报告</h3><p>下载含参数表、统计摘要、浓度图及拟合图的规范Word报告</p></div>
+      <div class="fc" onclick="openMo('mo-about')"><div class="fci" style="background:rgba(124,58,237,.07)">📐</div><h3>算法说明</h3><p>线性梯形法与线性升-对数降法AUC算法、λz自动选点、LM拟合</p></div>
+    </div>
+    <div class="home-footer">© 2025 中南大学湘雅药学院 · PharmCloud PK · 仅供研究参考</div>
+  </div>
+</div>
+
+<!-- ═══════════ DATA ═══════════ -->
+<div id="page-data" class="page">
+  <div class="al" style="grid-template-columns:288px 1fr">
+    <div class="sb">
+      <div class="sbs">
+        <div class="sbh">数据来源</div>
+        <div class="uz" id="data-drop" onclick="document.getElementById('data-file').click()"
+          ondragover="doDO(event,'data-drop')" ondragleave="doDL(event,'data-drop')" ondrop="doDropData(event)">
+          <div style="font-size:22px;margin-bottom:5px">📂</div>
+          <div style="font-size:11px;font-weight:500">拖拽文件或点击上传</div>
+          <div style="font-size:9px;color:var(--mu);margin-top:2px">.csv / .txt，无列名限制</div>
+        </div>
+        <input type="file" id="data-file" accept=".csv,.txt" style="display:none" onchange="loadDataFile(event)">
+        <div class="fr">
+          <label class="fl">粘贴数据（逗号/Tab分隔）</label>
+          <textarea class="fi" id="data-paste" style="min-height:70px;font-size:10px" placeholder="直接粘贴，第一行可为标题..."></textarea>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-g btn-sm" style="flex:1" onclick="parsePasted()">解析粘贴</button>
+          <button class="btn btn-g btn-sm" style="flex:1" onclick="loadDemo()">📦 示例</button>
+        </div>
       </div>
-      <div class="feat-grid" style="margin:0 auto">
-        <div class="feat-card" onclick="showPage('nca')">
-          <div class="feat-icon" style="background:rgba(0,212,255,.1)">📈</div>
-          <h3>非房室模型 NCA</h3>
-          <p>线性梯形法（默认）与线性升-对数降法，完整计算Cmax、Tmax、t½、Vd、CL等NCA参数</p>
+      <div class="sbs">
+        <div class="sbh">列映射</div>
+        <div class="fr">
+          <label class="fl">首行为标题行</label>
+          <select class="fs" id="has-header">
+            <option value="yes">是（默认）</option>
+            <option value="no">否</option>
+          </select>
         </div>
-        <div class="feat-card" onclick="showPage('ca')">
-          <div class="feat-icon" style="background:rgba(124,58,237,.1)">🏠</div>
-          <h3>房室模型分析</h3>
-          <p>IV推注/静脉滴注/血管外 × 一/二/三室模型，加权LM拟合，AIC/BIC模型选择</p>
+        <div id="col-map-panel"><div style="font-size:10px;color:var(--mu)">加载数据后配置</div></div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;padding:7px;margin-top:5px" onclick="applyMap()">✓ 应用列映射</button>
+      </div>
+      <div class="sbs" style="margin-top:auto">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <button class="btn-r" onclick="applyGoNCA()">→ 进行NCA分析</button>
+          <button class="btn-r" style="background:linear-gradient(135deg,var(--ac2),#5b21b6)" onclick="applyGoCA()">→ 进行房室模型分析</button>
         </div>
-        <div class="feat-card" onclick="showPage('sim')">
-          <div class="feat-icon" style="background:rgba(16,185,129,.1)">🎛️</div>
-          <h3>交互式PK模拟</h3>
-          <p>实时滑块调参，全部给药途径×房室模型组合，多剂量稳态模拟，动态可视化</p>
+      </div>
+    </div>
+    <div class="main">
+      <div class="tb-bar">
+        <div class="itb active" onclick="dtab('prev')" id="dtab-prev">数据预览</div>
+        <div class="itb" onclick="dtab('eda')" id="dtab-eda">描述统计</div>
+        <div class="itb" onclick="dtab('dplot')" id="dtab-dplot">浓度-时间图</div>
+        <div style="margin-left:auto;font-size:10px;color:var(--mu)" id="data-status">未加载</div>
+      </div>
+      <div class="ca">
+        <div id="dt-prev" class="itc active">
+          <div class="ib" style="margin-bottom:9px">
+            💡 CSV无列名限制，加载后在左侧将列分配到 <b>受试者/时间/浓度</b> 字段，点击"应用列映射"即可。
+          </div>
+          <div class="sh"><h2>原始数据</h2></div>
+          <div class="tw"><div class="ts">
+            <table class="pt"><thead id="raw-head"></thead><tbody id="raw-body">
+              <tr><td style="color:var(--mu);text-align:center;padding:18px">请先加载数据</td></tr>
+            </tbody></table>
+          </div></div>
         </div>
-        <div class="feat-card" onclick="showPage('report')">
-          <div class="feat-icon" style="background:rgba(245,158,11,.1)">📄</div>
-          <h3>Word报告生成</h3>
-          <p>一键下载规范格式的PK分析Word文档报告，含参数汇总表、统计摘要与方法说明</p>
+        <div id="dt-eda" class="itc">
+          <div id="eda-wrap" style="color:var(--mu);text-align:center;padding:36px">请先加载并映射数据</div>
         </div>
-        <div class="feat-card" onclick="loadDemo()">
-          <div class="feat-icon" style="background:rgba(239,68,68,.1)">🧪</div>
-          <h3>内置示例数据</h3>
-          <p>标准PK示例数据集（多受试者口服给药），一键加载体验完整NCA分析流程</p>
-        </div>
-        <div class="feat-card" onclick="showAbout()">
-          <div class="feat-icon" style="background:rgba(124,58,237,.07)">📐</div>
-          <h3>算法说明</h3>
-          <p>线性梯形法、线性升-对数降法AUC计算，末端λz自动最优选点，LM非线性拟合</p>
+        <div id="dt-dplot" class="itc">
+          <div class="cw"><div style="height:300px;position:relative"><canvas id="data-plot-cv"></canvas></div></div>
         </div>
       </div>
     </div>
   </div>
-  <div class="page-footer">© 2025 中南大学湘雅药学院 · PharmCloud PK 药动学分析平台 · 仅供研究参考</div>
 </div>
 
-<!-- ═══════════════ NCA ═══════════════ -->
+<!-- ═══════════ NCA ═══════════ -->
 <div id="page-nca" class="page">
-  <div class="analysis-layout">
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-title">数据输入</div>
-        <div class="upload-zone" id="nca-drop" onclick="document.getElementById('nca-file').click()" ondragover="handleDO(event,'nca-drop')" ondragleave="handleDL(event,'nca-drop')" ondrop="handleDrop(event,'nca')">
-          <div style="font-size:26px;margin-bottom:6px">📂</div>
-          <div style="font-size:12px;font-weight:500">拖拽CSV或点击上传</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:3px">格式: Subject, Time, Conc</div>
-        </div>
-        <input type="file" id="nca-file" accept=".csv,.txt" style="display:none" onchange="loadNCAFile(event)">
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost" style="flex:1;font-size:11px" onclick="loadDemo()">📦 示例数据</button>
-          <button class="btn btn-ghost" style="flex:1;font-size:11px" onclick="openManual()">✏️ 手动输入</button>
-        </div>
+  <div class="al">
+    <div class="sb">
+      <div class="sbs">
+        <div class="sbh">当前数据集</div>
+        <div id="nca-ds" style="font-size:10px;color:var(--mu)">未加载</div>
+        <button class="btn btn-g btn-sm" style="width:100%;margin-top:6px" onclick="go('data')">→ 数据管理</button>
+        <button class="btn btn-g btn-sm" style="width:100%;margin-top:4px" onclick="loadDemo()">📦 示例数据</button>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">分析设置</div>
-        <div class="form-row">
-          <label class="form-label">给药方案</label>
-          <select class="form-select" id="nca-route" onchange="updateNCARoute()">
-            <option value="ev">血管外给药（口服等）</option>
+      <div class="sbs">
+        <div class="sbh">分析设置</div>
+        <div class="fr"><label class="fl">给药方案</label>
+          <select class="fs" id="nca-route" onchange="toggleTinf('nca')">
+            <option value="ev">血管外给药</option>
             <option value="iv-bolus">静脉推注</option>
             <option value="iv-inf">静脉滴注</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">给药剂量 (mg)</label>
-          <input class="form-input" id="nca-dose" type="number" value="100" min="0" step="any">
-        </div>
-        <div class="form-row" id="nca-tinf-row" style="display:none">
-          <label class="form-label">滴注时间 (h)</label>
-          <input class="form-input" id="nca-tinf" type="number" value="1" min="0" step="any">
-        </div>
-        <div class="form-row">
-          <label class="form-label">AUC计算方法</label>
-          <select class="form-select" id="nca-auc-method">
-            <option value="linear">线性梯形法 (Linear Trapezoidal) — 默认</option>
-            <option value="lin-log">线性升-对数降法 (Linear Up / Log Down)</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">外推至无穷大 (AUC₀₋∞)</label>
-          <select class="form-select" id="nca-extrap">
+          </select></div>
+        <div class="fr"><label class="fl">给药剂量 (mg)</label>
+          <input class="fi" id="nca-dose" type="number" value="100" step="any"></div>
+        <div class="fr" id="nca-tinf-r" style="display:none"><label class="fl">滴注时间 (h)</label>
+          <input class="fi" id="nca-tinf" type="number" value="1" step="any"></div>
+        <div class="fr"><label class="fl">AUC计算方法</label>
+          <select class="fs" id="nca-method">
+            <option value="linear">线性梯形法 (Linear Trapezoidal) ← 默认</option>
+            <option value="linuplogdown">线性升-对数降法 (Linear Up/Log Down)</option>
+          </select></div>
+        <div class="fr"><label class="fl">AUC₀₋∞外推</label>
+          <select class="fs" id="nca-extrap">
             <option value="yes">是（需要λz）</option>
             <option value="no">否（仅AUC₀₋t）</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">浓度单位</label>
-          <input class="form-input" id="nca-cu" value="ng/mL" placeholder="如 ng/mL">
-        </div>
-        <div class="form-row">
-          <label class="form-label">时间单位</label>
-          <select class="form-select" id="nca-tu">
-            <option value="h">小时 (h)</option>
-            <option value="min">分钟 (min)</option>
-            <option value="d">天 (d)</option>
-          </select>
-        </div>
+          </select></div>
+        <div class="fr"><label class="fl">浓度单位</label>
+          <input class="fi" id="nca-cu" value="ng/mL"></div>
+        <div class="fr"><label class="fl">时间单位</label>
+          <select class="fs" id="nca-tu">
+            <option value="h">小时 (h)</option><option value="min">分钟 (min)</option><option value="d">天 (d)</option>
+          </select></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">受试者列表</div>
-        <div id="nca-subj-list" style="font-size:11px;color:var(--muted)">未加载数据</div>
+      <div class="sbs">
+        <div class="sbh">受试者</div>
+        <div id="nca-subjs" style="font-size:10px;color:var(--mu)">—</div>
       </div>
-      <div class="sidebar-section" style="margin-top:auto">
-        <button class="btn-run pulse" onclick="runNCA()">▶ 运行NCA分析</button>
-        <div class="progress-bar"><div class="progress-fill" id="nca-prog"></div></div>
+      <div class="sbs" style="margin-top:auto">
+        <button class="btn-r pulse" onclick="runNCA()">▶ 运行NCA分析</button>
+        <div class="pbar"><div class="pfill" id="nca-pg"></div></div>
       </div>
     </div>
-    <div class="main-area">
-      <div class="toolbar">
-        <div class="tab-btn active" onclick="ncaTab('data')" id="ncaTAB-data">数据预览</div>
-        <div class="tab-btn" onclick="ncaTab('plot')" id="ncaTAB-plot">浓度-时间图</div>
-        <div class="tab-btn" onclick="ncaTab('results')" id="ncaTAB-results">参数结果</div>
-        <div class="tab-btn" onclick="ncaTab('lambda')" id="ncaTAB-lambda">λz 拟合</div>
-        <div style="margin-left:auto;display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="exportNCACSV()">⬇ 导出CSV</button>
-          <button class="btn btn-success btn-sm" onclick="showPage('report')">📄 生成报告</button>
+    <div class="main">
+      <div class="tb-bar">
+        <div class="itb active" onclick="ncaTab('data')" id="ncaTB-data">数据</div>
+        <div class="itb" onclick="ncaTab('plot')" id="ncaTB-plot">浓度-时间图</div>
+        <div class="itb" onclick="ncaTab('res')" id="ncaTB-res">参数结果</div>
+        <div class="itb" onclick="ncaTab('lz')" id="ncaTB-lz">λz拟合</div>
+        <div style="margin-left:auto;display:flex;gap:5px">
+          <button class="btn btn-g btn-sm" onclick="exportNCACSV()">⬇CSV</button>
+          <button class="btn btn-ok btn-sm" onclick="go('report')">📄报告</button>
         </div>
       </div>
-      <div class="content-area" id="nca-content" style="overflow-y:auto">
-        <!-- DATA TAB -->
-        <div id="nca-tab-data" class="tab-content active">
-          <div class="info-box" style="margin-bottom:10px">
-            💡 CSV格式：首行为列标题，必须包含 <code style="font-family:var(--mono);background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">Subject, Time, Conc</code> 列（不区分大小写）。支持多受试者数据。
+      <div class="ca">
+        <div id="nca-tab-data" class="itc active">
+          <div class="sh"><h2>数据预览</h2><span id="nca-info" style="font-size:10px;color:var(--mu)"></span></div>
+          <div class="tw"><div class="ts">
+            <table class="pt"><thead><tr><th>Subject</th><th>Time</th><th>Conc</th></tr></thead>
+            <tbody id="nca-tbody"><tr><td colspan="3" style="color:var(--mu);text-align:center;padding:18px">请先加载数据</td></tr></tbody>
+          </table></div></div>
+        </div>
+        <div id="nca-tab-plot" class="itc">
+          <div class="sh"><h2>浓度-时间曲线</h2>
+            <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="nca-yscale" onchange="renderNCAPlot()">
+              <option value="linear">线性</option><option value="log">半对数</option>
+            </select></div>
+          <div class="cw" style="margin-bottom:10px">
+            <div style="height:270px;position:relative"><canvas id="nca-chart-main"></canvas></div>
           </div>
-          <div class="section-hdr">
-            <h2>原始数据预览</h2>
-            <span id="nca-data-info" style="font-size:11px;color:var(--muted)"></span>
-          </div>
-          <div class="data-table-wrap">
-            <div class="table-scroll">
-              <table class="pk-table" id="nca-raw-tbl">
-                <thead><tr><th>Subject</th><th>Time</th><th>Conc</th></tr></thead>
-                <tbody id="nca-raw-body"><tr><td colspan="3" style="color:var(--muted);text-align:center;padding:24px">请先加载数据</td></tr></tbody>
-              </table>
-            </div>
+          <div class="cw">
+            <div class="ct">半对数图（末端消除相可视化）</div>
+            <div style="height:210px;position:relative"><canvas id="nca-chart-semi"></canvas></div>
           </div>
         </div>
-        <!-- PLOT TAB -->
-        <div id="nca-tab-plot" class="tab-content">
-          <div class="section-hdr">
-            <h2>浓度-时间曲线</h2>
-            <select class="form-select" style="width:auto;padding:4px 9px;font-size:11px" id="nca-plot-scale" onchange="renderNCAPlot()">
-              <option value="linear">线性坐标</option>
-              <option value="log">半对数坐标</option>
-            </select>
-          </div>
-          <div class="chart-wrap" style="margin-bottom:12px">
-            <div class="chart-canvas-wrap" style="height:300px"><canvas id="nca-chart"></canvas></div>
-          </div>
-          <div class="chart-wrap">
-            <div class="chart-title">半对数图（末端线性相可视化）</div>
-            <div class="chart-canvas-wrap" style="height:230px"><canvas id="nca-semilog"></canvas></div>
-          </div>
+        <div id="nca-tab-res" class="itc">
+          <div id="nca-res-wrap" style="color:var(--mu);text-align:center;padding:36px">请先运行NCA分析</div>
         </div>
-        <!-- RESULTS TAB -->
-        <div id="nca-tab-results" class="tab-content">
-          <div id="nca-results-wrap" style="color:var(--muted);text-align:center;padding:48px">请先运行NCA分析</div>
-        </div>
-        <!-- LAMBDA TAB -->
-        <div id="nca-tab-lambda" class="tab-content">
-          <div id="nca-lambda-wrap" style="color:var(--muted);text-align:center;padding:48px">请先运行NCA分析</div>
+        <div id="nca-tab-lz" class="itc">
+          <div id="nca-lz-wrap" style="color:var(--mu);text-align:center;padding:36px">请先运行NCA分析</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════ CA ═══════════════ -->
+<!-- ═══════════ CA ═══════════ -->
 <div id="page-ca" class="page">
-  <div class="analysis-layout">
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-title">数据输入</div>
-        <button class="btn btn-ghost" style="width:100%;margin-bottom:8px;font-size:11px" onclick="loadCADemo()">📦 加载示例数据</button>
-        <div class="form-row">
-          <label class="form-label">浓度-时间数据（每行: 时间,浓度）</label>
-          <textarea class="form-input" id="ca-raw" style="min-height:120px;font-size:11px" placeholder="0,0&#10;0.5,6.57&#10;1,11.5&#10;2,13.2&#10;4,9.21&#10;8,3.92&#10;12,1.72&#10;24,0.42"></textarea>
-        </div>
-        <div class="form-row">
-          <label class="form-label">给药剂量 (mg)</label>
-          <input class="form-input" id="ca-dose" type="number" value="100" step="any">
-        </div>
-        <div class="form-row" id="ca-tinf-row" style="display:none">
-          <label class="form-label">滴注时间 Tinf (h)</label>
-          <input class="form-input" id="ca-tinf" type="number" value="1" step="any">
-        </div>
+  <div class="al">
+    <div class="sb">
+      <div class="sbs">
+        <div class="sbh">当前数据集</div>
+        <div id="ca-ds" style="font-size:10px;color:var(--mu)">未加载</div>
+        <button class="btn btn-g btn-sm" style="width:100%;margin-top:5px" onclick="go('data')">→ 数据管理</button>
+        <div class="fr" style="margin-top:7px"><label class="fl">受试者（单受试者拟合）</label>
+          <select class="fs" id="ca-subj"><option value="">-- 全部均值 --</option></select></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">模型选择</div>
-        <div class="form-row">
-          <label class="form-label">给药途径</label>
-          <select class="form-select" id="ca-route" onchange="updateCAModel()">
-            <option value="iv-bolus">静脉推注 (IV Bolus)</option>
-            <option value="iv-inf">静脉滴注 (IV Infusion)</option>
-            <option value="ev">血管外给药 (Extravascular)</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">房室数</label>
-          <select class="form-select" id="ca-ncomp" onchange="updateCAModel()">
-            <option value="1">一室模型</option>
-            <option value="2">二室模型</option>
-            <option value="3" id="ca-3c-opt">三室模型</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">残差加权方式</label>
-          <select class="form-select" id="ca-weight">
-            <option value="uniform">Uniform (等权重, w=1)</option>
-            <option value="1_C">1/C (w = 1/观测浓度)</option>
-            <option value="1_C2">1/C² (w = 1/观测浓度²)</option>
-            <option value="1_sqrtC">1/√C (w = 1/√观测浓度)</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">最大迭代次数</label>
-          <input class="form-input" id="ca-maxiter" type="number" value="500" min="50" max="2000">
-        </div>
-      </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">初始参数估计</div>
-        <div id="ca-init-params-panel"></div>
-      </div>
-      <div class="sidebar-section" style="margin-top:auto">
-        <button class="btn-run pulse" onclick="runCA()">▶ 运行房室模型拟合</button>
-        <div class="progress-bar"><div class="progress-fill" id="ca-prog"></div></div>
-      </div>
-    </div>
-    <div class="main-area">
-      <div class="toolbar">
-        <div class="tab-btn active" onclick="caTab('fit')" id="caTAB-fit">拟合曲线</div>
-        <div class="tab-btn" onclick="caTab('params')" id="caTAB-params">参数结果</div>
-        <div class="tab-btn" onclick="caTab('diag')" id="caTAB-diag">残差诊断</div>
-        <div class="tab-btn" onclick="caTab('compare')" id="caTAB-compare">模型比较</div>
-        <div style="margin-left:auto">
-          <button class="btn btn-success btn-sm" onclick="showPage('report')">📄 生成报告</button>
-        </div>
-      </div>
-      <div class="content-area" style="overflow-y:auto">
-        <div id="ca-tab-fit" class="tab-content active">
-          <div class="chart-wrap">
-            <div class="chart-title">观测值 vs 拟合曲线</div>
-            <div class="chart-canvas-wrap" style="height:300px"><canvas id="ca-fit-chart"></canvas></div>
-          </div>
-          <div id="ca-fit-summary" style="margin-top:12px;color:var(--muted);text-align:center;padding:16px">请先运行拟合分析</div>
-        </div>
-        <div id="ca-tab-params" class="tab-content">
-          <div id="ca-params-wrap" style="color:var(--muted);text-align:center;padding:48px">请先运行分析</div>
-        </div>
-        <div id="ca-tab-diag" class="tab-content">
-          <div class="chart-wrap" style="margin-bottom:12px">
-            <div class="chart-title">加权残差 vs 时间</div>
-            <div class="chart-canvas-wrap" style="height:220px"><canvas id="ca-res-chart"></canvas></div>
-          </div>
-          <div class="chart-wrap">
-            <div class="chart-title">观测值 vs 预测值</div>
-            <div class="chart-canvas-wrap" style="height:220px"><canvas id="ca-dv-chart"></canvas></div>
-          </div>
-        </div>
-        <div id="ca-tab-compare" class="tab-content">
-          <div id="ca-compare-wrap" style="color:var(--muted);text-align:center;padding:48px">运行多个模型后可比较</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SIMULATION ═══════════════ -->
-<div id="page-sim" class="page">
-  <div class="sim-layout">
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-title">模型选择</div>
-        <div class="form-row">
-          <label class="form-label">给药途径</label>
-          <select class="form-select" id="sim-route" onchange="updateSimModel();runSim()">
+      <div class="sbs">
+        <div class="sbh">模型设置</div>
+        <div class="fr"><label class="fl">给药途径</label>
+          <select class="fs" id="ca-route" onchange="updateCAModel()">
             <option value="iv-bolus">静脉推注 (IV Bolus)</option>
             <option value="iv-inf">静脉滴注 (IV Infusion)</option>
             <option value="ev">血管外给药 (EV)</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">房室数</label>
-          <select class="form-select" id="sim-ncomp" onchange="updateSimModel();runSim()">
-            <option value="1">一室模型</option>
-            <option value="2">二室模型</option>
-            <option value="3">三室模型</option>
-          </select>
-        </div>
+          </select></div>
+        <div class="fr" id="ca-tinf-row" style="display:none"><label class="fl">滴注时间 Tinf (h)</label>
+          <input class="fi" id="ca-tinf" type="number" value="1" step="any"></div>
+        <div class="fr"><label class="fl">房室数</label>
+          <select class="fs" id="ca-nc" onchange="updateCAModel()">
+            <option value="1">一室模型</option><option value="2">二室模型</option>
+            <option value="3" id="nc3opt">三室模型</option>
+          </select></div>
+        <div class="fr"><label class="fl">给药剂量 (mg)</label>
+          <input class="fi" id="ca-dose" type="number" value="100" step="any"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">PK参数</div>
-        <div id="sim-params-panel"></div>
+      <div class="sbs">
+        <div class="sbh">初始参数估计</div>
+        <div id="ca-init-panel"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">给药方案</div>
-        <div class="slider-wrap">
-          <div class="slider-lbl"><span>剂量 (mg)</span><span id="sv-dose">100</span></div>
-          <input type="range" id="s-dose" min="10" max="2000" step="10" value="100" oninput="sv('dose',this.value);runSim()">
-        </div>
-        <div class="slider-wrap" id="sim-tinf-wrap" style="display:none">
-          <div class="slider-lbl"><span>滴注时间 (h)</span><span id="sv-tinf">1</span></div>
-          <input type="range" id="s-tinf" min="0.25" max="24" step="0.25" value="1" oninput="sv('tinf',this.value);runSim()">
-        </div>
-        <div class="slider-wrap">
-          <div class="slider-lbl"><span>给药次数</span><span id="sv-ndose">1</span></div>
-          <input type="range" id="s-ndose" min="1" max="10" step="1" value="1" oninput="sv('ndose',this.value);runSim()">
-        </div>
-        <div class="slider-wrap">
-          <div class="slider-lbl"><span>给药间隔 (h)</span><span id="sv-tau">24</span></div>
-          <input type="range" id="s-tau" min="4" max="72" step="2" value="24" oninput="sv('tau',this.value);runSim()">
-        </div>
-        <div class="slider-wrap">
-          <div class="slider-lbl"><span>模拟时长 (h)</span><span id="sv-tmax">72</span></div>
-          <input type="range" id="s-tmax" min="12" max="480" step="12" value="72" oninput="sv('tmax',this.value);runSim()">
-        </div>
+      <div class="sbs">
+        <div class="sbh">拟合选项</div>
+        <div class="fr"><label class="fl">残差加权方式</label>
+          <select class="fs" id="ca-wt">
+            <option value="uniform">Uniform（w=1）</option>
+            <option value="1/C">1/C</option>
+            <option value="1/C2">1/C²</option>
+            <option value="1/sqrtC">1/√C</option>
+          </select></div>
+        <div class="fr"><label class="fl">最大迭代次数</label>
+          <input class="fi" id="ca-maxiter" type="number" value="600" min="50"></div>
+        <button class="btn btn-cmp" onclick="runAllWts()">⚖️ 比较全部加权方案</button>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">实时参数摘要</div>
-        <div id="sim-pk-summary" style="font-size:11px;font-family:var(--mono);line-height:2;color:var(--text)">—</div>
-      </div>
-      <div class="sidebar-section">
-        <button class="btn btn-ghost btn-sm" style="width:100%" onclick="resetSim()">↺ 重置参数</button>
+      <div class="sbs" style="margin-top:auto">
+        <button class="btn-r pulse" onclick="runCA()">▶ 运行房室模型拟合</button>
+        <div class="pbar"><div class="pfill" id="ca-pg"></div></div>
       </div>
     </div>
-    <div class="main-area">
-      <div class="toolbar">
-        <span style="font-size:12px;font-weight:500;color:var(--text)">交互式PK浓度-时间曲线模拟</span>
-        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <select class="form-select" style="width:auto;padding:4px 9px;font-size:11px" id="sim-scale" onchange="runSim()">
-            <option value="linear">线性坐标</option>
-            <option value="log">半对数坐标</option>
-          </select>
+    <div class="main">
+      <div class="tb-bar">
+        <div class="itb active" onclick="caTab('fit')" id="caTB-fit">拟合曲线</div>
+        <div class="itb" onclick="caTab('params')" id="caTB-params">参数结果</div>
+        <div class="itb" onclick="caTab('diag')" id="caTB-diag">残差诊断</div>
+        <div class="itb" onclick="caTab('cmp')" id="caTB-cmp">模型比较</div>
+        <div style="margin-left:auto">
+          <button class="btn btn-ok btn-sm" onclick="go('report')">📄报告</button>
         </div>
       </div>
-      <div class="content-area" style="overflow-y:auto">
-        <div class="chart-wrap">
-          <div class="chart-title">浓度-时间曲线（实时响应）</div>
-          <div class="chart-canvas-wrap" style="height:340px"><canvas id="sim-chart"></canvas></div>
+      <div class="ca">
+        <div id="ca-tab-fit" class="itc active">
+          <div class="cw">
+            <div class="ct">观测值 vs 拟合曲线</div>
+            <div style="height:270px;position:relative"><canvas id="ca-fit-cv"></canvas></div>
+          </div>
+          <div id="ca-fit-sum" style="margin-top:10px;color:var(--mu);text-align:center;padding:10px">请先运行拟合</div>
         </div>
-        <div class="rcard-grid" id="sim-rcard-grid">
-          <div class="rcard"><div class="rcard-lbl">Cmax</div><div class="rcard-val" id="sc-cmax">—</div><div class="rcard-unit">ng/mL</div></div>
-          <div class="rcard"><div class="rcard-lbl">Tmax</div><div class="rcard-val" id="sc-tmax">—</div><div class="rcard-unit">h</div></div>
-          <div class="rcard"><div class="rcard-lbl">t½ (末端)</div><div class="rcard-val" id="sc-thalf">—</div><div class="rcard-unit">h</div></div>
-          <div class="rcard"><div class="rcard-lbl">AUC₀₋∞</div><div class="rcard-val" id="sc-auc">—</div><div class="rcard-unit">ng·h/mL</div></div>
-          <div class="rcard"><div class="rcard-lbl">CL (L/h)</div><div class="rcard-val" id="sc-cl">—</div><div class="rcard-unit">—</div></div>
-          <div class="rcard"><div class="rcard-lbl">Vss / Vd (L)</div><div class="rcard-val" id="sc-vd">—</div><div class="rcard-unit">—</div></div>
+        <div id="ca-tab-params" class="itc">
+          <div id="ca-params-wrap" style="color:var(--mu);text-align:center;padding:36px">请先运行分析</div>
+        </div>
+        <div id="ca-tab-diag" class="itc">
+          <div class="cw" style="margin-bottom:10px">
+            <div class="ct">加权残差 vs 时间</div>
+            <div style="height:200px;position:relative"><canvas id="ca-res-cv"></canvas></div>
+          </div>
+          <div class="cw">
+            <div class="ct">观测值 vs 预测值 (DV vs PRED)</div>
+            <div style="height:200px;position:relative"><canvas id="ca-dv-cv"></canvas></div>
+          </div>
+        </div>
+        <div id="ca-tab-cmp" class="itc">
+          <div id="ca-cmp-wrap" style="color:var(--mu);text-align:center;padding:36px">运行多次拟合后可比较</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════ REPORT ═══════════════ -->
+<!-- ═══════════ SIM ═══════════ -->
+<div id="page-sim" class="page">
+  <div class="al" style="grid-template-columns:252px 1fr">
+    <div class="sb">
+      <div class="sbs">
+        <div class="sbh">模型</div>
+        <div class="fr"><label class="fl">给药途径</label>
+          <select class="fs" id="sim-route" onchange="updateSim();runSim()">
+            <option value="iv-bolus">静脉推注</option>
+            <option value="iv-inf">静脉滴注</option>
+            <option value="ev">血管外给药</option>
+          </select></div>
+        <div class="fr"><label class="fl">房室数</label>
+          <select class="fs" id="sim-nc" onchange="updateSim();runSim()">
+            <option value="1">一室</option><option value="2">二室</option><option value="3">三室</option>
+          </select></div>
+      </div>
+      <div class="sbs"><div class="sbh">PK参数</div><div id="sim-pp"></div></div>
+      <div class="sbs">
+        <div class="sbh">给药方案</div>
+        <div class="sw"><div class="sl"><span>剂量(mg)</span><span id="sv-dose">100</span></div>
+          <input type="range" id="sr-dose" min="10" max="2000" step="10" value="100" oninput="sv('dose',this.value);runSim()"></div>
+        <div class="sw" id="sw-tinf" style="display:none">
+          <div class="sl"><span>滴注时间(h)</span><span id="sv-tinf">1</span></div>
+          <input type="range" id="sr-tinf" min="0.25" max="24" step="0.25" value="1" oninput="sv('tinf',this.value);runSim()"></div>
+        <div class="sw"><div class="sl"><span>给药次数</span><span id="sv-ndose">1</span></div>
+          <input type="range" id="sr-ndose" min="1" max="10" step="1" value="1" oninput="sv('ndose',this.value);runSim()"></div>
+        <div class="sw"><div class="sl"><span>间隔(h)</span><span id="sv-tau">24</span></div>
+          <input type="range" id="sr-tau" min="4" max="72" step="2" value="24" oninput="sv('tau',this.value);runSim()"></div>
+        <div class="sw"><div class="sl"><span>时长(h)</span><span id="sv-tmax">72</span></div>
+          <input type="range" id="sr-tmax" min="12" max="480" step="12" value="72" oninput="sv('tmax',this.value);runSim()"></div>
+      </div>
+      <div class="sbs"><div class="sbh">参数摘要</div>
+        <div id="sim-sum" style="font-size:10px;font-family:var(--mono);line-height:2">—</div>
+      </div>
+      <div class="sbs"><button class="btn btn-g btn-sm" style="width:100%" onclick="resetSim()">↺ 重置</button></div>
+    </div>
+    <div class="main">
+      <div class="tb-bar">
+        <span style="font-size:11px;font-weight:600">交互式PK浓度-时间模拟</span>
+        <div style="margin-left:auto;display:flex;gap:5px;align-items:center">
+          <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="sim-scale" onchange="runSim()">
+            <option value="linear">线性</option><option value="log">半对数</option>
+          </select>
+        </div>
+      </div>
+      <div class="ca">
+        <div class="cw">
+          <div class="ct">浓度-时间曲线（实时响应）</div>
+          <div style="height:310px;position:relative"><canvas id="sim-cv"></canvas></div>
+        </div>
+        <div class="rcg">
+          <div class="rc"><div class="rl">Cmax</div><div class="rv" id="sc-cmax">—</div><div class="ru">ng/mL</div></div>
+          <div class="rc"><div class="rl">Tmax</div><div class="rv" id="sc-tmax">—</div><div class="ru">h</div></div>
+          <div class="rc"><div class="rl">t½ (h)</div><div class="rv" id="sc-thalf">—</div></div>
+          <div class="rc"><div class="rl">AUC₀₋∞</div><div class="rv" id="sc-auc">—</div><div class="ru">ng·h/mL</div></div>
+          <div class="rc"><div class="rl">CL (L/h)</div><div class="rv" id="sc-cl">—</div></div>
+          <div class="rc"><div class="rl">Vd (L)</div><div class="rv" id="sc-vd">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ REPORT ═══════════ -->
 <div id="page-report" class="page">
-  <div style="max-width:820px;margin:0 auto;padding:24px;overflow-y:auto;height:100%">
-    <div class="section-hdr" style="margin-bottom:16px">
-      <h2 style="font-family:var(--display);font-size:18px">生成PK分析报告</h2>
-    </div>
-    <div class="info-box" style="margin-bottom:16px">
-      📋 报告包含：研究信息、分析方法说明、NCA参数汇总表、描述性统计、房室模型结果（如已分析）。
-      提供 <strong>Word文档(.doc)</strong> 下载，可直接在Microsoft Word中编辑。
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+  <div style="max-width:800px;margin:0 auto;padding:20px;overflow-y:auto;height:100%;flex:1">
+    <div class="sh" style="margin-bottom:12px"><h2 style="font-size:15px">生成PK分析报告</h2></div>
+    <div class="ib" style="margin-bottom:12px">📋 报告含：研究信息、方法说明、NCA参数表、统计摘要、房室模型结果及图表（如选中）。下载Word文档(.doc)，可在Word中编辑。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div>
-        <div class="sidebar-title" style="margin-bottom:10px">报告基本信息</div>
-        <div class="form-row"><label class="form-label">研究名称/报告标题</label><input class="form-input" id="rpt-title" value="药代动力学分析报告"></div>
-        <div class="form-row"><label class="form-label">药物名称</label><input class="form-input" id="rpt-drug" placeholder="如：阿莫西林"></div>
-        <div class="form-row"><label class="form-label">分析人员</label><input class="form-input" id="rpt-analyst" placeholder="姓名"></div>
-        <div class="form-row"><label class="form-label">研究机构</label><input class="form-input" id="rpt-inst" value="中南大学湘雅药学院"></div>
-        <div class="form-row"><label class="form-label">报告日期</label><input class="form-input" id="rpt-date" type="date"></div>
+        <div class="sbh" style="margin-bottom:7px">报告信息</div>
+        <div class="fr"><label class="fl">报告标题</label><input class="fi" id="rpt-title" value="药代动力学分析报告"></div>
+        <div class="fr"><label class="fl">药物名称</label><input class="fi" id="rpt-drug" placeholder="如：阿莫西林"></div>
+        <div class="fr"><label class="fl">分析人员</label><input class="fi" id="rpt-analyst"></div>
+        <div class="fr"><label class="fl">研究机构</label><input class="fi" id="rpt-inst" value="中南大学湘雅药学院"></div>
+        <div class="fr"><label class="fl">报告日期</label><input class="fi" id="rpt-date" type="date"></div>
       </div>
       <div>
-        <div class="sidebar-title" style="margin-bottom:10px">报告内容</div>
-        <div style="display:flex;flex-direction:column;gap:9px;font-size:12px">
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="rpt-nca" checked> 非房室模型（NCA）分析结果</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="rpt-ca"> 房室模型拟合结果</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="rpt-methods" checked> 分析方法学说明</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="rpt-stats" checked> 描述性统计（均值、SD、CV%）</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="rpt-disclm" checked> 免责声明</label>
+        <div class="sbh" style="margin-bottom:7px">报告内容</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:11px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-nca" checked> NCA分析参数与统计</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-ca"> 房室模型拟合结果</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-methods" checked> 分析方法说明</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-stats" checked> 描述性统计（均值/SD/CV%）</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-nca-img" checked> 输出NCA浓度-时间图</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-ca-img" checked> 输出房室模型拟合图</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-discl" checked> 免责声明</label>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-bottom:20px">
-      <button class="btn btn-success" style="flex:1;justify-content:center;padding:11px" onclick="downloadWordReport()">
-        📝 下载Word文档 (.doc)
-      </button>
-      <button class="btn btn-ghost" style="flex:1;justify-content:center;padding:11px" onclick="exportNCACSV()">
-        📊 导出NCA参数 CSV
-      </button>
+    <div style="display:flex;gap:9px;margin-bottom:16px">
+      <button class="btn btn-ok" style="flex:1;justify-content:center;padding:10px" onclick="downloadReport()">📝 下载Word文档 (.doc)</button>
+      <button class="btn btn-g" style="flex:1;justify-content:center;padding:10px" onclick="exportNCACSV()">📊 导出NCA参数 CSV</button>
     </div>
-    <div class="sidebar-title" style="margin-bottom:8px">报告摘要预览</div>
-    <div id="report-preview" style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;min-height:160px;font-size:12px;color:var(--muted)">
-      配置完成后点击下载按钮生成报告
-    </div>
+    <div class="sbh" style="margin-bottom:6px">报告预览</div>
+    <div id="rpt-prev" style="background:var(--panel);border:1px solid var(--bdr);border-radius:8px;padding:14px;min-height:100px;font-size:11px;color:var(--mu)">配置完成后点击下载</div>
   </div>
 </div>
 
-</div><!-- /app -->
-
-<!-- ═══ MODALS ═══ -->
-<div class="modal-overlay" id="modal-manual">
-  <div class="modal">
-    <div class="modal-title">✏️ 手动输入数据 <button class="xbtn" onclick="closeModal('modal-manual')">×</button></div>
-    <div class="info-box" style="margin-bottom:10px;font-size:11px">
-      格式：每行 <code style="font-family:var(--mono)">Subject,Time,Conc</code>，第一行为标题行。
+<!-- MODALS -->
+<div class="mo" id="mo-about">
+  <div class="md"><div class="md-ttl">📐 算法说明 <button class="xb" onclick="closeMo('mo-about')">×</button></div>
+    <div style="font-size:11px;line-height:1.85">
+      <b style="color:var(--ac)">线性梯形法（默认）：</b>AUC[i] = (C[i]+C[i+1])/2 × ΔT，全程适用，等同于WinNonlin Linear方法。<br>
+      <b style="color:var(--ac)">线性升-对数降法：</b>上升段用线性梯形；下降段用对数梯形：AUC[i] = (C[i]−C[i+1])/ln(C[i]/C[i+1]) × ΔT。<br>
+      <b style="color:var(--ac)">关键规则：</b>① AUC₀₋t仅计算至Clast（最后一个正浓度）；② t=0浓度为0时正常纳入；③ 两端有0时该区间用线性。<br>
+      <b style="color:var(--ac)">λz选择：</b>末端对数线性回归，枚举Cmax之后≥3点的所有组合，选调整R²最大的。t½ = ln2/λz。<br>
+      <b style="color:var(--ac)">AUC外推：</b>AUC₀₋∞ = AUC₀₋t + Clast/λz；AUMC₀₋∞ = AUMC₀₋t + Tlast·Clast/λz + Clast/λz²。<br>
+      <b style="color:var(--ac)">房室模型：</b>RK4数值积分ODE，LM加权非线性最小二乘。WSSE = Σwᵢ(Cobs−Cpred)²。<br>
+      <div class="wb" style="margin-top:9px">⚠️ 仅供学术研究，不用于临床决策或法规申报。</div>
     </div>
-    <textarea class="form-input" id="manual-data" style="min-height:200px;font-size:11px">Subject,Time,Conc
-S01,0,0
-S01,0.25,2.84
-S01,0.5,6.57
-S01,1,11.5
-S01,1.5,13.8
-S01,2,13.2
-S01,3,11.4
-S01,4,9.21
-S01,6,6.09
-S01,8,3.92
-S01,12,1.72
-S01,24,0.42</textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-      <button class="btn btn-ghost" onclick="closeModal('modal-manual')">取消</button>
-      <button class="btn btn-primary" onclick="loadManualData()">加载数据</button>
-    </div>
+    <div style="margin-top:11px;text-align:right"><button class="btn btn-p" onclick="closeMo('mo-about')">确认</button></div>
   </div>
 </div>
-
-<div class="modal-overlay" id="modal-about">
-  <div class="modal" style="width:640px">
-    <div class="modal-title">📐 算法说明 <button class="xbtn" onclick="closeModal('modal-about')">×</button></div>
-    <div style="font-size:12px;line-height:1.8">
-      <h3 style="color:var(--accent);margin-bottom:6px;font-family:var(--display)">AUC 计算方法</h3>
-      <div class="info-box" style="margin-bottom:10px">
-        <strong>线性梯形法（默认）：</strong>AUC[i] = (C[i] + C[i+1]) / 2 × ΔT（全程适用）<br>
-        <strong>线性升-对数降法：</strong>上升段用线性梯形；下降段（C[i+1] &lt; C[i]）用对数梯形：<br>
-        &nbsp;&nbsp;&nbsp;AUC[i] = (C[i] − C[i+1]) / ln(C[i]/C[i+1]) × ΔT<br>
-        <strong>AUC外推：</strong>AUC₀₋∞ = AUC₀₋t + C_last / λz
-      </div>
-      <h3 style="color:var(--accent);margin-bottom:6px;font-family:var(--display)">末端消除率常数 λz</h3>
-      <div class="info-box" style="margin-bottom:10px">
-        末端对数-线性回归（ln C vs t），自动枚举所有可能点集（≥3点，均在Cmax之后），
-        选择使调整R²最大的组合。t½ = ln(2) / λz
-      </div>
-      <h3 style="color:var(--accent);margin-bottom:6px;font-family:var(--display)">房室模型与拟合</h3>
-      <div class="info-box" style="margin-bottom:10px">
-        使用RK4数值积分求解ODE系统，Levenberg-Marquardt算法最小化加权残差平方和：<br>
-        WSSE = Σ wᵢ(C_obs,ᵢ − C_pred,ᵢ)²，wᵢ由选定权重方案决定<br>
-        AIC = n·ln(WSSE/n) + 2p &nbsp;|&nbsp; BIC = n·ln(WSSE/n) + p·ln(n)
-      </div>
-      <div class="warn-box">⚠️ 本平台所有计算结果仅供研究参考。用于临床决策或法规申报时，请使用经验证的专业软件。</div>
-    </div>
-    <div style="margin-top:14px;text-align:right"><button class="btn btn-primary" onclick="closeModal('modal-about')">确认</button></div>
-  </div>
-</div>
-
-<div class="notif-container" id="notif-box"></div>
-
-<!-- ══════════════════════════════════════════
-     JAVASCRIPT — FULL ENGINE
-══════════════════════════════════════════ -->
+<div class="nc" id="nc-box"></div>
 <script>
 'use strict';
-
-// ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // GLOBAL STATE
-// ──────────────────────────────────────────
-const S = {
-  ncaData: null, ncaResults: null, caResults: null,
-  charts: {},
-  modelHistory: []
+// ═══════════════════════════════════════════════════════════
+const G={
+  rawRows:null,rawCols:[],
+  data:null,        // [{Subject,Time,Conc,Dose}] after mapping
+  ncaResults:null,
+  caResult:null,
+  caHistory:[],     // [{label,wt,r2,aic,bic,rmse,wsse,params,def,dose,tinf,data}]
+  charts:{}
 };
 
-// ──────────────────────────────────────────
-// MODEL DEFINITIONS
-// ──────────────────────────────────────────
-const CA_MODEL_DEFS = {
-  'iv-bolus-1': {
-    label: 'IV推注 · 一室', route:'iv-bolus', nc:1,
-    params:[
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.15,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1 (中央室容积, L)',def:30,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'iv-bolus-2': {
-    label: 'IV推注 · 二室', route:'iv-bolus', nc:2,
-    params:[
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k12',lbl:'k12 (隔室1→2, h⁻¹)',def:0.4,min:1e-4,max:10,step:0.001},
-      {id:'k21',lbl:'k21 (隔室2→1, h⁻¹)',def:0.12,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1 (中央室容积, L)',def:20,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'iv-bolus-3': {
-    label: 'IV推注 · 三室', route:'iv-bolus', nc:3,
-    params:[
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k12',lbl:'k12 (隔室1→2, h⁻¹)',def:0.5,min:1e-4,max:10,step:0.001},
-      {id:'k21',lbl:'k21 (隔室2→1, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k13',lbl:'k13 (隔室1→3, h⁻¹)',def:0.1,min:1e-4,max:10,step:0.001},
-      {id:'k31',lbl:'k31 (隔室3→1, h⁻¹)',def:0.04,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1 (中央室容积, L)',def:10,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'iv-inf-1': {
-    label: '静脉滴注 · 一室', route:'iv-inf', nc:1,
-    params:[
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.15,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1 (中央室容积, L)',def:30,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'iv-inf-2': {
-    label: '静脉滴注 · 二室', route:'iv-inf', nc:2,
-    params:[
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k12',lbl:'k12 (隔室1→2, h⁻¹)',def:0.4,min:1e-4,max:10,step:0.001},
-      {id:'k21',lbl:'k21 (隔室2→1, h⁻¹)',def:0.12,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1 (中央室容积, L)',def:20,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'iv-inf-3': {
-    label: '静脉滴注 · 三室', route:'iv-inf', nc:3,
-    params:[
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k12',lbl:'k12 (隔室1→2, h⁻¹)',def:0.5,min:1e-4,max:10,step:0.001},
-      {id:'k21',lbl:'k21 (隔室2→1, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k13',lbl:'k13 (隔室1→3, h⁻¹)',def:0.1,min:1e-4,max:10,step:0.001},
-      {id:'k31',lbl:'k31 (隔室3→1, h⁻¹)',def:0.04,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1 (中央室容积, L)',def:10,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'ev-1': {
-    label: '血管外给药 · 一室', route:'ev', nc:1,
-    params:[
-      {id:'ka', lbl:'Ka (吸收速率常数, h⁻¹)',def:1.5,min:1e-4,max:20,step:0.01},
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.15,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1/F (表观分布容积, L)',def:30,min:0.1,max:1000,step:0.1}
-    ]
-  },
-  'ev-2': {
-    label: '血管外给药 · 二室', route:'ev', nc:2,
-    params:[
-      {id:'ka', lbl:'Ka (吸收速率常数, h⁻¹)',def:1.5,min:1e-4,max:20,step:0.01},
-      {id:'k10',lbl:'k10 (消除速率常数, h⁻¹)',def:0.2,min:1e-4,max:10,step:0.001},
-      {id:'k12',lbl:'k12 (隔室1→2, h⁻¹)',def:0.4,min:1e-4,max:10,step:0.001},
-      {id:'k21',lbl:'k21 (隔室2→1, h⁻¹)',def:0.12,min:1e-4,max:10,step:0.001},
-      {id:'V1', lbl:'V1/F (表观中央室容积, L)',def:20,min:0.1,max:1000,step:0.1}
-    ]
-  }
-};
-
-const SIM_PARAM_DEFS = {
-  'iv-bolus': {
-    1:[{id:'k10',lbl:'k10 (h⁻¹)',def:0.15,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1 (L)',def:30,min:0.1,max:500,step:0.5}],
-    2:[{id:'k10',lbl:'k10 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k12',lbl:'k12 (h⁻¹)',def:0.4,min:0.001,max:5,step:0.001},{id:'k21',lbl:'k21 (h⁻¹)',def:0.12,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1 (L)',def:20,min:0.1,max:500,step:0.5}],
-    3:[{id:'k10',lbl:'k10 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k12',lbl:'k12 (h⁻¹)',def:0.5,min:0.001,max:5,step:0.001},{id:'k21',lbl:'k21 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k13',lbl:'k13 (h⁻¹)',def:0.1,min:0.001,max:5,step:0.001},{id:'k31',lbl:'k31 (h⁻¹)',def:0.04,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1 (L)',def:10,min:0.1,max:500,step:0.5}]
-  },
-  'iv-inf': {
-    1:[{id:'k10',lbl:'k10 (h⁻¹)',def:0.15,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1 (L)',def:30,min:0.1,max:500,step:0.5}],
-    2:[{id:'k10',lbl:'k10 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k12',lbl:'k12 (h⁻¹)',def:0.4,min:0.001,max:5,step:0.001},{id:'k21',lbl:'k21 (h⁻¹)',def:0.12,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1 (L)',def:20,min:0.1,max:500,step:0.5}],
-    3:[{id:'k10',lbl:'k10 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k12',lbl:'k12 (h⁻¹)',def:0.5,min:0.001,max:5,step:0.001},{id:'k21',lbl:'k21 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k13',lbl:'k13 (h⁻¹)',def:0.1,min:0.001,max:5,step:0.001},{id:'k31',lbl:'k31 (h⁻¹)',def:0.04,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1 (L)',def:10,min:0.1,max:500,step:0.5}]
-  },
-  'ev': {
-    1:[{id:'ka',lbl:'Ka (h⁻¹)',def:1.5,min:0.01,max:20,step:0.01},{id:'k10',lbl:'k10 (h⁻¹)',def:0.15,min:0.001,max:5,step:0.001},{id:'V1',lbl:'Vd/F (L)',def:30,min:0.1,max:500,step:0.5}],
-    2:[{id:'ka',lbl:'Ka (h⁻¹)',def:1.5,min:0.01,max:20,step:0.01},{id:'k10',lbl:'k10 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k12',lbl:'k12 (h⁻¹)',def:0.4,min:0.001,max:5,step:0.001},{id:'k21',lbl:'k21 (h⁻¹)',def:0.12,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1/F (L)',def:20,min:0.1,max:500,step:0.5}],
-    3:[{id:'ka',lbl:'Ka (h⁻¹)',def:1.5,min:0.01,max:20,step:0.01},{id:'k10',lbl:'k10 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k12',lbl:'k12 (h⁻¹)',def:0.5,min:0.001,max:5,step:0.001},{id:'k21',lbl:'k21 (h⁻¹)',def:0.2,min:0.001,max:5,step:0.001},{id:'k13',lbl:'k13 (h⁻¹)',def:0.1,min:0.001,max:5,step:0.001},{id:'k31',lbl:'k31 (h⁻¹)',def:0.04,min:0.001,max:5,step:0.001},{id:'V1',lbl:'V1/F (L)',def:10,min:0.1,max:500,step:0.5}]
-  }
-};
-
-// ──────────────────────────────────────────
-// NAV & PAGES
-// ──────────────────────────────────────────
-function showPage(id) {
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function go(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nt').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const idx={home:0,nca:1,ca:2,sim:3,report:4}[id];
-  if(idx!==undefined) document.querySelectorAll('.nav-tab')[idx].classList.add('active');
-  if(id==='sim') runSim();
+  const idx={home:0,data:1,nca:2,ca:3,sim:4,report:5}[id];
+  if(idx!==undefined) document.querySelectorAll('.nt')[idx].classList.add('active');
+  if(id==='nca') syncNCAStatus();
+  if(id==='ca'){syncCAStatus();updateCAModel();}
+  if(id==='sim'){updateSim();runSim();}
 }
-function ncaTab(n){
-  ['data','plot','results','lambda'].forEach(t=>{
-    document.getElementById('nca-tab-'+t).classList.remove('active');
-    document.getElementById('ncaTAB-'+t).classList.remove('active');
-  });
-  document.getElementById('nca-tab-'+n).classList.add('active');
-  document.getElementById('ncaTAB-'+n).classList.add('active');
-  if(n==='plot'&&S.ncaData) renderNCAPlot();
-}
-function caTab(n){
-  ['fit','params','diag','compare'].forEach(t=>{
-    document.getElementById('ca-tab-'+t).classList.remove('active');
-    document.getElementById('caTAB-'+t).classList.remove('active');
-  });
-  document.getElementById('ca-tab-'+n).classList.add('active');
-  document.getElementById('caTAB-'+n).classList.add('active');
-}
-
-// ──────────────────────────────────────────
-// UTILITIES
-// ──────────────────────────────────────────
-function notify(msg, type='info'){
+function openMo(id){document.getElementById(id).classList.add('show');}
+function closeMo(id){document.getElementById(id).classList.remove('show');}
+function sv(id,val){document.getElementById('sv-'+id).textContent=+val%1===0?val:parseFloat(val).toFixed(+val<0.1?4:2);}
+function notify(msg,type='info'){
   const icons={info:'ℹ️',ok:'✅',warn:'⚠️',err:'❌'};
-  const colors={info:'var(--accent)',ok:'var(--accent3)',warn:'var(--warn)',err:'var(--danger)'};
-  const el=document.createElement('div'); el.className='notif-item';
-  el.style.borderColor=colors[type];
+  const bc={info:'var(--ac)',ok:'var(--ac3)',warn:'var(--warn)',err:'var(--err)'};
+  const el=document.createElement('div');el.className='ni';el.style.borderColor=bc[type];
   el.innerHTML=`<span>${icons[type]}</span><span style="flex:1">${msg}</span>`;
-  document.getElementById('notif-box').appendChild(el);
-  setTimeout(()=>el.style.opacity='0',3500);
+  document.getElementById('nc-box').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .4s';},3500);
   setTimeout(()=>el.remove(),4000);
 }
-function fmt(v,d=3){if(v===null||v===undefined||isNaN(v))return'—';return(+v).toFixed(d);}
-function closeModal(id){document.getElementById(id).classList.remove('show');}
-function showAbout(){document.getElementById('modal-about').classList.add('show');}
-function openManual(){document.getElementById('modal-manual').classList.add('show');}
-function handleDO(e,id){e.preventDefault();document.getElementById(id).classList.add('drag-over');}
-function handleDL(e,id){document.getElementById(id).classList.remove('drag-over');}
-function handleDrop(e,type){e.preventDefault();document.getElementById(type==='nca'?'nca-drop':'x').classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)parseCSV(f,'nca');}
-function sv(id,v){document.getElementById('sv-'+id).textContent=v;}
-function destroyChart(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
-
-// Linear regression on (xs, ys)
-function linReg(xs,ys){
-  const n=xs.length; if(n<2) return null;
-  const mx=xs.reduce((a,b)=>a+b)/n, my=ys.reduce((a,b)=>a+b)/n;
-  let ssxy=0,ssx=0;
-  for(let i=0;i<n;i++){ssxy+=(xs[i]-mx)*(ys[i]-my);ssx+=(xs[i]-mx)**2;}
-  if(ssx<1e-15) return null;
-  const b=ssxy/ssx, a=my-b*mx;
-  const preds=xs.map(x=>a+b*x);
-  const ssRes=ys.reduce((s,y,i)=>s+(y-preds[i])**2,0);
-  const ssTot=ys.reduce((s,y)=>s+(y-my)**2,0);
-  const r2=ssTot<1e-15?1:1-ssRes/ssTot;
-  return {slope:b,intercept:a,r2,n};
+function fmt(v,d=3){if(v===null||v===undefined||isNaN(v)||!isFinite(v))return'—';return(+v).toFixed(d);}
+function dKill(id){if(G.charts[id]){G.charts[id].destroy();delete G.charts[id];}}
+function doDO(e,id){e.preventDefault();document.getElementById(id).classList.add('drag');}
+function doDL(e,id){document.getElementById(id).classList.remove('drag');}
+function toggleTinf(mod){
+  const r=document.getElementById(mod+'-route').value;
+  const row=document.getElementById(mod+'-tinf-r')||document.getElementById(mod+'-tinf-row');
+  if(row) row.style.display=r==='iv-inf'?'flex':'none';
 }
 
-// Gaussian elimination to solve Ax=b
-function solveLS(A,b){
-  const n=b.length;
-  const M=A.map((row,i)=>[...row,b[i]]);
-  for(let i=0;i<n;i++){
-    let mx=i;
-    for(let r=i+1;r<n;r++) if(Math.abs(M[r][i])>Math.abs(M[mx][i])) mx=r;
-    [M[i],M[mx]]=[M[mx],M[i]];
-    if(Math.abs(M[i][i])<1e-14) return null;
-    for(let r=0;r<n;r++){if(r===i) continue; const f=M[r][i]/M[i][i]; for(let c=i;c<=n;c++) M[r][c]-=f*M[i][c];}
-  }
-  return M.map((row,i)=>row[n]/row[i]);
-}
-
-// ──────────────────────────────────────────
-// ODE ENGINE (RK4) — generalized for all compartment models
-// ──────────────────────────────────────────
-/**
- * Simulate PK model using RK4
- * @param {number[]} tGrid - time points
- * @param {object} p - parameter object with k10,k12,k21,k13,k31,ka,V1
- * @param {string} route - 'iv-bolus'|'iv-inf'|'ev'
- * @param {number} nc - compartment count
- * @param {number} dose - single dose amount (mg)
- * @param {number} tinf - infusion duration (h), only for iv-inf
- * @returns {number[]} concentration array (ng/mL if units consistent)
- */
-function simPKModel(tGrid, p, route, nc, dose, tinf=1){
-  const {k10=0.15, k12=0, k21=0, k13=0, k31=0, ka=1.5, V1=30} = p;
-
-  // State vector depends on model
-  // iv-bolus 1c: [X1]
-  // iv-bolus 2c: [X1,X2]
-  // iv-bolus 3c: [X1,X2,X3]
-  // ev nc: [Xa, X1, ...compartments]
-  // ODE: dX/dt = f(t, X)
-
-  function getDerivs(t, X, input_rate){
-    if(route==='ev'){
-      const Xa=X[0];
-      const X1=X[1];
-      if(nc===1){
-        return [-ka*Xa, ka*Xa - k10*X1];
-      } else if(nc===2){
-        const X2=X[2];
-        return [-ka*Xa, ka*Xa-(k10+k12)*X1+k21*X2, k12*X1-k21*X2];
-      } else { // 3c
-        const X2=X[2],X3=X[3];
-        return [-ka*Xa, ka*Xa-(k10+k12+k13)*X1+k21*X2+k31*X3, k12*X1-k21*X2, k13*X1-k31*X3];
-      }
-    } else {
-      // iv-bolus or iv-inf
-      const X1=X[0];
-      if(nc===1){
-        return [input_rate - k10*X1];
-      } else if(nc===2){
-        const X2=X[1];
-        return [input_rate-(k10+k12)*X1+k21*X2, k12*X1-k21*X2];
-      } else { // 3c
-        const X2=X[1],X3=X[2];
-        return [input_rate-(k10+k12+k13)*X1+k21*X2+k31*X3, k12*X1-k21*X2, k13*X1-k31*X3];
-      }
-    }
-  }
-
-  function getInputRate(t, dose, tinf){
-    if(route==='iv-inf') return (t>=0 && t<tinf) ? dose/tinf : 0;
-    return 0; // iv-bolus input handled via initial conditions; ev has no direct input
-  }
-
-  // Initial conditions
-  function getX0(dose){
-    if(route==='iv-bolus'){
-      if(nc===1) return [dose];
-      if(nc===2) return [dose,0];
-      return [dose,0,0];
-    } else if(route==='iv-inf'){
-      if(nc===1) return [0];
-      if(nc===2) return [0,0];
-      return [0,0,0];
-    } else { // ev
-      if(nc===1) return [dose,0];
-      if(nc===2) return [dose,0,0];
-      return [dose,0,0,0];
-    }
-  }
-
-  // C1 is X1/V1
-  function getC1(X){
-    if(route==='ev') return Math.max(0,X[1]/V1);
-    return Math.max(0,X[0]/V1);
-  }
-
-  const nPoints = tGrid.length;
-  const concs = new Array(nPoints).fill(0);
-
-  // For multiple doses, use superposition (valid for linear systems)
-  // We'll simulate from t=0 to tMax with dose events
-  // For superposition: conc(t) = Σ_doses conc_single(t - t_dose_i)
-
-  return concs.map((_, idx) => {
-    const t = tGrid[idx];
-    return t; // placeholder, computed below
+// TAB SWITCHERS
+function dtab(n){
+  ['prev','eda','dplot'].forEach(t=>{
+    document.getElementById('dt-'+t).classList.remove('active');
+    document.getElementById('dtab-'+t).classList.remove('active');
   });
+  document.getElementById('dt-'+n).classList.add('active');
+  document.getElementById('dtab-'+n).classList.add('active');
+  if(n==='dplot') renderDataPlot();
+}
+function ncaTab(n){
+  ['data','plot','res','lz'].forEach(t=>{
+    document.getElementById('nca-tab-'+t).classList.remove('active');
+    document.getElementById('ncaTB-'+t).classList.remove('active');
+  });
+  document.getElementById('nca-tab-'+n).classList.add('active');
+  document.getElementById('ncaTB-'+n).classList.add('active');
+  if(n==='plot') renderNCAPlot();
+}
+function caTab(n){
+  ['fit','params','diag','cmp'].forEach(t=>{
+    document.getElementById('ca-tab-'+t).classList.remove('active');
+    document.getElementById('caTB-'+t).classList.remove('active');
+  });
+  document.getElementById('ca-tab-'+n).classList.add('active');
+  document.getElementById('caTB-'+n).classList.add('active');
 }
 
+// ═══════════════════════════════════════════════════════════
+// DATA MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function loadDataFile(e){const f=e.target.files[0];if(f)parseFile(f);}
+function doDropData(e){
+  e.preventDefault();
+  document.getElementById('data-drop').classList.remove('drag');
+  const f=e.dataTransfer.files[0];if(f)parseFile(f);
+}
+function parseFile(file){
+  Papa.parse(file,{header:false,dynamicTyping:false,skipEmptyLines:true,
+    complete:r=>onRaw(r.data,file.name)});
+}
+function parsePasted(){
+  const txt=document.getElementById('data-paste').value.trim();
+  if(!txt){notify('请先输入数据','warn');return;}
+  Papa.parse(txt,{header:false,dynamicTyping:false,skipEmptyLines:true,
+    complete:r=>onRaw(r.data,'粘贴数据')});
+}
+function onRaw(rows,src){
+  if(!rows||rows.length<2){notify('数据行数不足','err');return;}
+  G.rawRows=rows;
+  const hasHdr=document.getElementById('has-header').value==='yes';
+  G.rawCols=hasHdr?rows[0].map((c,i)=>String(c).trim()||'列'+(i+1)):rows[0].map((_,i)=>'列'+(i+1));
+  buildMapUI();
+  showRawPreview();
+  const nRows=rows.length-(hasHdr?1:0);
+  document.getElementById('data-status').textContent=`${nRows}行 × ${G.rawCols.length}列`;
+  notify(`已加载 ${nRows} 行 × ${G.rawCols.length} 列 [${src}]`,'ok');
+}
+function buildMapUI(){
+  const cols=G.rawCols;
+  const opts=(req)=>`${req?'':'<option value="">-- 不使用 --</option>'}${cols.map((c,i)=>`<option value="${i}">${c}</option>`).join('')}`;
+  // auto-detect
+  const d=(kws)=>cols.findIndex(c=>kws.some(k=>c.toLowerCase().trim().includes(k)));
+  const si=d(['subj','id','sub','pat','no']),ti=d(['time','t','hr','hour']),ci=d(['conc','dv','cp','y']),di=d(['dose']);
+  document.getElementById('col-map-panel').innerHTML=`
+    <div class="cm-grid">
+      <div class="cm-card"><div class="cm-l">受试者 (可选)</div>
+        <select class="fs" id="cm-s">${opts(false)}</select></div>
+      <div class="cm-card"><div class="cm-l">时间 *</div>
+        <select class="fs" id="cm-t">${opts(true)}</select></div>
+      <div class="cm-card"><div class="cm-l">浓度 *</div>
+        <select class="fs" id="cm-c">${opts(true)}</select></div>
+      <div class="cm-card"><div class="cm-l">剂量 (可选)</div>
+        <select class="fs" id="cm-d">${opts(false)}</select></div>
+    </div>`;
+  if(si>=0) document.getElementById('cm-s').value=si;
+  if(ti>=0) document.getElementById('cm-t').value=ti;
+  if(ci>=0) document.getElementById('cm-c').value=ci;
+  if(di>=0) document.getElementById('cm-d').value=di;
+}
+function showRawPreview(){
+  const rows=G.rawRows;const cols=G.rawCols;
+  const hasHdr=document.getElementById('has-header').value==='yes';
+  const dr=hasHdr?rows.slice(1):rows;
+  document.getElementById('raw-head').innerHTML='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+  document.getElementById('raw-body').innerHTML=dr.slice(0,40).map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('');
+}
+function applyMap(){
+  if(!G.rawRows){notify('请先加载数据','warn');return;}
+  const hasHdr=document.getElementById('has-header').value==='yes';
+  const dr=hasHdr?G.rawRows.slice(1):G.rawRows;
+  const tI=document.getElementById('cm-t')?.value;
+  const cI=document.getElementById('cm-c')?.value;
+  if(tI===''||tI===undefined||cI===''||cI===undefined){notify('请选择时间列和浓度列','warn');return;}
+  const tIdx=+tI,cIdx=+cI;
+  const sEl=document.getElementById('cm-s');
+  const sIdx=(sEl&&sEl.value!=='')?+sEl.value:-1;
+  const dEl=document.getElementById('cm-d');
+  const dIdx=(dEl&&dEl.value!=='')?+dEl.value:-1;
+  const parsed=dr.map(row=>{
+    const t=+row[tIdx],c=+row[cIdx];
+    if(isNaN(t)||isNaN(c)) return null;
+    return{Subject:sIdx>=0?String(row[sIdx]).trim():'S01',Time:t,Conc:c,
+      Dose:dIdx>=0?+row[dIdx]:null};
+  }).filter(Boolean);
+  if(!parsed.length){notify('无有效数据，检查列选择','err');return;}
+  G.data=parsed;
+  const subs=[...new Set(parsed.map(r=>r.Subject))];
+  // Update CA subject selector
+  const sel=document.getElementById('ca-subj');
+  sel.innerHTML='<option value="">-- 全部均值 --</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  renderEDA(parsed,subs);
+  syncNCAStatus();syncCAStatus();
+  notify(`映射成功：${parsed.length}条有效数据，${subs.length}名受试者`,'ok');
+  dtab('eda');
+}
+function applyGoNCA(){applyMap();if(G.data)go('nca');}
+function applyGoCA(){applyMap();if(G.data)go('ca');}
+
+function renderEDA(data,subjects){
+  let html=`<div class="sh"><h2>描述统计</h2></div><div class="tw"><div class="ts">
+  <table class="pt"><thead><tr><th>受试者</th><th>N</th><th>Cmax</th><th>Tmax</th><th>Clast</th><th>Tlast</th><th>时间范围</th></tr></thead><tbody>`;
+  subjects.forEach(s=>{
+    const rows=data.filter(r=>r.Subject===s).sort((a,b)=>a.Time-b.Time);
+    const n=rows.length;
+    const cmax=Math.max(...rows.map(r=>r.Conc));
+    const tmax=rows.find(r=>r.Conc===cmax)?.Time;
+    let clast=0,tlast=0;
+    for(let i=rows.length-1;i>=0;i--){if(rows[i].Conc>0){clast=rows[i].Conc;tlast=rows[i].Time;break;}}
+    const tmin=rows[0]?.Time||0;
+    html+=`<tr><td style="font-weight:600">${s}</td><td>${n}</td><td>${fmt(cmax,3)}</td><td>${fmt(tmax,2)}</td><td>${fmt(clast,3)}</td><td>${fmt(tlast,2)}</td><td>${tmin}~${tlast}</td></tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  document.getElementById('eda-wrap').innerHTML=html;
+}
+function renderDataPlot(){
+  if(!G.data)return;
+  const subjects=[...new Set(G.data.map(r=>r.Subject))];
+  const COLS=['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
+  const datasets=subjects.map((s,i)=>{
+    const rows=G.data.filter(r=>r.Subject===s).sort((a,b)=>a.Time-b.Time);
+    return{label:s,data:rows.map(r=>({x:r.Time,y:r.Conc})),
+      borderColor:COLS[i%7],backgroundColor:COLS[i%7]+'22',pointRadius:4,tension:.3,fill:false};
+  });
+  dKill('dataPlot');
+  G.charts['dataPlot']=new Chart(document.getElementById('data-plot-cv'),{type:'line',
+    data:{datasets},options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+              y:{title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}},
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}}}});
+}
+
+function syncNCAStatus(){
+  if(!G.data){document.getElementById('nca-ds').innerHTML='<span style="color:var(--warn)">未加载数据</span>';return;}
+  const subs=[...new Set(G.data.map(r=>r.Subject))];
+  document.getElementById('nca-ds').innerHTML=`<span class="badge b-ok">✓</span> ${G.data.length}条 · ${subs.length}人`;
+  document.getElementById('nca-subjs').innerHTML=subs.map(s=>`<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><div style="width:6px;height:6px;border-radius:50%;background:var(--ac)"></div><span>${s}</span></div>`).join('');
+  document.getElementById('nca-info').textContent=`${G.data.length}条 · ${subs.length}人`;
+  document.getElementById('nca-tbody').innerHTML=G.data.slice(0,80).map(r=>`<tr><td>${r.Subject}</td><td>${r.Time}</td><td>${r.Conc}</td></tr>`).join('');
+}
+function syncCAStatus(){
+  if(!G.data){document.getElementById('ca-ds').innerHTML='<span style="color:var(--warn)">未加载数据</span>';return;}
+  const subs=[...new Set(G.data.map(r=>r.Subject))];
+  document.getElementById('ca-ds').innerHTML=`<span class="badge b-ok">✓</span> ${G.data.length}条 · ${subs.length}人`;
+  const sel=document.getElementById('ca-subj');
+  if(sel.options.length<=1){
+    sel.innerHTML='<option value="">-- 全部均值 --</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════════════════════════
+const DEMO=[
+  {Subject:'S01',Time:0,Conc:0},{Subject:'S01',Time:0.25,Conc:2.84},
+  {Subject:'S01',Time:0.5,Conc:6.57},{Subject:'S01',Time:1,Conc:11.5},
+  {Subject:'S01',Time:1.5,Conc:13.8},{Subject:'S01',Time:2,Conc:13.2},
+  {Subject:'S01',Time:3,Conc:11.4},{Subject:'S01',Time:4,Conc:9.21},
+  {Subject:'S01',Time:6,Conc:6.09},{Subject:'S01',Time:8,Conc:3.92},
+  {Subject:'S01',Time:12,Conc:1.72},{Subject:'S01',Time:24,Conc:0.42},
+  {Subject:'S02',Time:0,Conc:0},{Subject:'S02',Time:0.25,Conc:3.12},
+  {Subject:'S02',Time:0.5,Conc:7.23},{Subject:'S02',Time:1,Conc:12.8},
+  {Subject:'S02',Time:1.5,Conc:14.9},{Subject:'S02',Time:2,Conc:14.1},
+  {Subject:'S02',Time:3,Conc:12.1},{Subject:'S02',Time:4,Conc:9.87},
+  {Subject:'S02',Time:6,Conc:6.52},{Subject:'S02',Time:8,Conc:4.21},
+  {Subject:'S02',Time:12,Conc:1.85},{Subject:'S02',Time:24,Conc:0.47},
+  {Subject:'S03',Time:0,Conc:0},{Subject:'S03',Time:0.25,Conc:2.51},
+  {Subject:'S03',Time:0.5,Conc:5.89},{Subject:'S03',Time:1,Conc:10.3},
+  {Subject:'S03',Time:1.5,Conc:12.5},{Subject:'S03',Time:2,Conc:12.0},
+  {Subject:'S03',Time:3,Conc:10.2},{Subject:'S03',Time:4,Conc:8.34},
+  {Subject:'S03',Time:6,Conc:5.52},{Subject:'S03',Time:8,Conc:3.56},
+  {Subject:'S03',Time:12,Conc:1.57},{Subject:'S03',Time:24,Conc:0.39}
+];
+function loadDemo(){
+  G.data=DEMO.map(r=>({...r,Dose:100}));
+  syncNCAStatus();syncCAStatus();
+  const subs=[...new Set(G.data.map(r=>r.Subject))];
+  const sel=document.getElementById('ca-subj');
+  sel.innerHTML='<option value="">-- 全部均值 --</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  notify('示例数据已加载（3受试者，口服给药）','ok');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUC CALCULATION - Correctly matching WinNonlin rules
+// ═══════════════════════════════════════════════════════════
 /**
- * Full multi-dose simulation with RK4 (superposition)
+ * Linear Trapezoidal: ALL intervals use linear trapezoid
+ * AUC[i] = (C[i] + C[i+1]) / 2 * (t[i+1] - t[i])
  */
-function simulateMultiDose(tGrid, p, route, nc, dose, tinf, nDose, tau){
-  const {k10=0.15, k12=0, k21=0, k13=0, k31=0, ka=1.5, V1=30} = p;
-
-  function derivs(t_local, X, inputRate){
-    if(route==='ev'){
-      const Xa=X[0], X1=X[1];
-      if(nc===1) return [-ka*Xa, ka*Xa-k10*X1];
-      if(nc===2){const X2=X[2]; return [-ka*Xa, ka*Xa-(k10+k12)*X1+k21*X2, k12*X1-k21*X2];}
-      const X2=X[2],X3=X[3];
-      return [-ka*Xa, ka*Xa-(k10+k12+k13)*X1+k21*X2+k31*X3, k12*X1-k21*X2, k13*X1-k31*X3];
-    } else {
-      const X1=X[0];
-      if(nc===1) return [inputRate-k10*X1];
-      if(nc===2){const X2=X[1]; return [inputRate-(k10+k12)*X1+k21*X2, k12*X1-k21*X2];}
-      const X2=X[1],X3=X[2];
-      return [inputRate-(k10+k12+k13)*X1+k21*X2+k31*X3, k12*X1-k21*X2, k13*X1-k31*X3];
-    }
-  }
-
-  function getC(X){
-    const x1 = route==='ev' ? X[1] : X[0];
-    return Math.max(0, x1/V1);
-  }
-
-  function getDim(){
-    if(route==='ev') return nc===1?2:nc===2?3:4;
-    return nc;
-  }
-
-  const dim = getDim();
-  const tMax = tGrid[tGrid.length-1];
-
-  // Simulate entire time course with dose events
-  let X = new Array(dim).fill(0);
-  const concs = [];
-  const tAll = [...tGrid];
-  let gIdx = 0;
-
-  // Add dose events
-  const doseEvents = [];
-  for(let d=0;d<nDose;d++) doseEvents.push(d*tau);
-
-  // Integrate step by step over grid, handling dose events
-  let prevT = 0;
-  let dosesDone = 0;
-
-  // Apply initial dose at t=0
-  function applyDose(X_cur, t_dose){
-    const Xn = [...X_cur];
-    if(route==='iv-bolus'){
-      Xn[0] += dose; // add to central compartment amounts
-    } else if(route==='ev'){
-      Xn[0] += dose; // add to absorption compartment
-    }
-    // for iv-inf: input rate handles it
-    return Xn;
-  }
-
-  // Collect concentrations at each tGrid point
-  const result = new Array(tGrid.length).fill(0);
-
-  // Use adaptive RK4: integrate from each tGrid point to next
-  // Much more accurate than fixed dt
-  let Xcur = new Array(dim).fill(0);
-
-  // Apply first dose
-  if(route!=='iv-inf' && doseEvents[0]===0){
-    Xcur = applyDose(Xcur, 0);
-    dosesDone=1;
-  }
-
-  function rk4Step(t, X, dt, inputRate){
-    const k1 = derivs(t, X, inputRate);
-    const X2 = X.map((x,i)=>x+k1[i]*dt/2);
-    const k2 = derivs(t+dt/2, X2, inputRate);
-    const X3 = X.map((x,i)=>x+k2[i]*dt/2);
-    const k3 = derivs(t+dt/2, X3, inputRate);
-    const X4 = X.map((x,i)=>x+k3[i]*dt);
-    const k4 = derivs(t+dt, X4, inputRate);
-    return X.map((x,i)=>x+(k1[i]+2*k2[i]+2*k3[i]+k4[i])*dt/6);
-  }
-
-  function getInputRate(t){
-    if(route!=='iv-inf') return 0;
-    let rate=0;
-    for(let d=0;d<nDose;d++){
-      const td=d*tau;
-      if(t>=td && t<td+tinf) rate+=dose/tinf;
-    }
-    return rate;
-  }
-
-  result[0]=getC(Xcur);
-  let curT=tGrid[0];
-
-  for(let i=1;i<tGrid.length;i++){
-    const nextT=tGrid[i];
-    let t=curT;
-
-    while(t<nextT-1e-12){
-      // Find next event before nextT
-      let nextEvent=nextT;
-      // Check for dose events
-      for(let d=dosesDone;d<nDose;d++){
-        if(doseEvents[d]>t+1e-12 && doseEvents[d]<nextEvent){
-          nextEvent=doseEvents[d];
-        }
-      }
-      // Check for end of infusions
-      if(route==='iv-inf'){
-        for(let d=0;d<nDose;d++){
-          const te=d*tau+tinf;
-          if(te>t+1e-12&&te<nextEvent) nextEvent=te;
-        }
-      }
-
-      const dt=Math.min(0.05, nextEvent-t);
-      if(dt<1e-12) break;
-
-      const irate=getInputRate(t);
-      Xcur=rk4Step(t, Xcur, dt, irate);
-      // Clamp
-      for(let j=0;j<dim;j++) if(Xcur[j]<0) Xcur[j]=0;
-      t+=dt;
-
-      // Apply dose events at t
-      while(dosesDone<nDose && Math.abs(t-doseEvents[dosesDone])<1e-9){
-        if(route!=='iv-inf') Xcur=applyDose(Xcur,t);
-        dosesDone++;
-      }
-    }
-
-    // Handle dose at exactly nextT
-    while(dosesDone<nDose && Math.abs(nextT-doseEvents[dosesDone])<1e-9){
-      if(route!=='iv-inf') Xcur=applyDose(Xcur,nextT);
-      dosesDone++;
-    }
-
-    result[i]=getC(Xcur);
-    curT=nextT;
-  }
-
-  return result;
-}
-
-// ──────────────────────────────────────────
-// NCA CALCULATIONS
-// ──────────────────────────────────────────
-function aucLinear(ts,cs){
-  let s=0;
-  for(let i=0;i<ts.length-1;i++) s+=(cs[i]+cs[i+1])/2*(ts[i+1]-ts[i]);
-  return s;
-}
-
-function aucLinUpLogDown(ts,cs){
+function aucLinear(ts, cs){
   let s=0;
   for(let i=0;i<ts.length-1;i++){
-    const dt=ts[i+1]-ts[i], c1=cs[i], c2=cs[i+1];
-    if(c1<=0||c2<=0){s+=(c1+c2)/2*dt;}
-    else if(c2>=c1){s+=(c1+c2)/2*dt;}
-    else{const lr=Math.log(c1/c2); s+=Math.abs(lr)<1e-12?(c1+c2)/2*dt:(c1-c2)/lr*dt;}
+    s += (cs[i]+cs[i+1]) / 2 * (ts[i+1]-ts[i]);
   }
   return s;
 }
 
-function aumcLinear(ts,cs){
+/**
+ * Linear Up / Log Down (WinNonlin "LinLog" or "Lin-Log"):
+ *  - Ascending or flat (C[i+1] >= C[i]): linear trapezoid
+ *  - Descending (C[i+1] < C[i]): log trapezoid
+ *    EXCEPTION: if either endpoint is 0, use linear
+ */
+function aucLinUpLogDown(ts, cs){
   let s=0;
-  for(let i=0;i<ts.length-1;i++) s+=(ts[i]*cs[i]+ts[i+1]*cs[i+1])/2*(ts[i+1]-ts[i]);
+  for(let i=0;i<ts.length-1;i++){
+    const dt=ts[i+1]-ts[i];
+    const c1=cs[i], c2=cs[i+1];
+    if(c1<=0 || c2<=0){
+      // linear if zero
+      s += (c1+c2)/2 * dt;
+    } else if(c2 >= c1){
+      // ascending: linear
+      s += (c1+c2)/2 * dt;
+    } else {
+      // descending: log trapezoidal
+      const lnR = Math.log(c1/c2);
+      if(lnR < 1e-12){
+        s += (c1+c2)/2 * dt;
+      } else {
+        s += (c1-c2)/lnR * dt;
+      }
+    }
+  }
   return s;
 }
 
-function estimateLambdaZ(ts,cs){
+/**
+ * AUMC: moment of concentration (linear trapezoidal for all)
+ * Compatible with WinNonlin
+ */
+function aumcLinear(ts, cs){
+  let s=0;
+  for(let i=0;i<ts.length-1;i++){
+    const dt=ts[i+1]-ts[i];
+    s += (ts[i]*cs[i] + ts[i+1]*cs[i+1])/2 * dt;
+  }
+  return s;
+}
+
+/**
+ * AUMC Log-down version for LinUpLogDown
+ * Descending intervals use exact log-linear formula
+ */
+function aumcLinUpLogDown(ts, cs){
+  let s=0;
+  for(let i=0;i<ts.length-1;i++){
+    const dt=ts[i+1]-ts[i];
+    const t1=ts[i],t2=ts[i+1],c1=cs[i],c2=cs[i+1];
+    if(c1>0 && c2>0 && c2<c1){
+      const lam=Math.log(c1/c2)/dt;
+      if(lam<1e-12){
+        s += (t1*c1+t2*c2)/2*dt;
+      } else {
+        // exact: integral of t*c1*exp(-lam*(t-t1)) from t1 to t2
+        s += (t1*c1-t2*c2)/lam - (c1-c2)/(lam*lam);
+      }
+    } else {
+      s += (t1*c1+t2*c2)/2*dt;
+    }
+  }
+  return s;
+}
+
+/**
+ * Lambda-z estimation: log-linear regression on terminal phase
+ * Rules:
+ *  1. Only use points AFTER Cmax
+ *  2. Only use positive concentrations
+ *  3. Need at least 3 points
+ *  4. Slope must be negative (elimination)
+ *  5. Select combo with highest adjusted R²
+ */
+function estLZ(ts, cs){
+  // Find Cmax index
   let cmaxI=0;
   for(let i=1;i<cs.length;i++) if(cs[i]>cs[cmaxI]) cmaxI=i;
-  const eligible=[];
-  for(let i=cmaxI;i<ts.length;i++) if(cs[i]>0) eligible.push({t:ts[i],c:cs[i],i});
-  if(eligible.length<3) return null;
-
-  let best={r2adj:-Infinity}, bestSI=0;
-  for(let si=0;si<=eligible.length-3;si++){
-    const pts=eligible.slice(si);
-    const reg=linReg(pts.map(p=>p.t), pts.map(p=>Math.log(p.c)));
-    if(!reg||reg.slope>=0) continue;
+  // Eligible: strictly after Cmax, positive
+  const elig=[];
+  for(let i=cmaxI+1;i<ts.length;i++){
+    if(cs[i]>0) elig.push({t:ts[i],c:cs[i]});
+  }
+  if(elig.length<3) return null;
+  let best={r2adj:-Infinity};
+  for(let si=0;si<=elig.length-3;si++){
+    const pts=elig.slice(si);
     const n=pts.length;
-    const r2adj=1-(1-reg.r2)*(n-1)/(n-2);
+    const lnC=pts.map(p=>Math.log(p.c));
+    const tArr=pts.map(p=>p.t);
+    const reg=linReg(tArr,lnC);
+    if(!reg||reg.slope>=0) continue;
+    const r2adj=n>2?1-(1-reg.r2)*(n-1)/(n-2):-Infinity;
     if(r2adj>best.r2adj){
-      best={r2:reg.r2,r2adj,slope:reg.slope,intercept:reg.intercept,n,pts};
-      bestSI=si;
+      best={r2:reg.r2,r2adj,slope:reg.slope,intercept:reg.intercept,n,pts,si};
     }
   }
-  if(!best.slope) return null;
-  return {
-    lambda_z:-best.slope, r2:best.r2, r2adj:best.r2adj,
-    n:best.n, pts:best.pts, intercept:best.intercept,
-    startIdx:eligible[bestSI].i, eligible
-  };
+  if(!best.slope||!isFinite(best.slope)) return null;
+  return{lambda_z:-best.slope,r2:best.r2,r2adj:best.r2adj,n:best.n,
+    pts:best.pts,intercept:best.intercept};
 }
 
+function linReg(xs,ys){
+  const n=xs.length;if(n<2) return null;
+  const mx=xs.reduce((a,b)=>a+b)/n, my=ys.reduce((a,b)=>a+b)/n;
+  let ssxy=0,ssx=0,ssy=0;
+  for(let i=0;i<n;i++){ssxy+=(xs[i]-mx)*(ys[i]-my);ssx+=(xs[i]-mx)**2;ssy+=(ys[i]-my)**2;}
+  if(ssx<1e-15) return null;
+  const b=ssxy/ssx,a=my-b*mx;
+  const r2=ssy<1e-15?1:ssxy**2/(ssx*ssy);
+  return{slope:b,intercept:a,r2};
+}
+
+// ═══════════════════════════════════════════════════════════
+// NCA
+// ═══════════════════════════════════════════════════════════
 function runNCA(){
-  if(!S.ncaData){notify('请先加载数据','warn');return;}
-  const prog=document.getElementById('nca-prog');
-  prog.style.width='10%';
-  const method=document.getElementById('nca-auc-method').value;
+  if(!G.data){notify('请先加载数据','warn');return;}
+  const pg=document.getElementById('nca-pg');
+  pg.style.width='10%';
+  const method=document.getElementById('nca-method').value;
   const dose=+document.getElementById('nca-dose').value||100;
   const extrap=document.getElementById('nca-extrap').value==='yes';
-  const subjects=[...new Set(S.ncaData.map(r=>r.Subject))];
+  const aucFn = method==='linear' ? aucLinear : aucLinUpLogDown;
+  const aumcFn = method==='linear' ? aumcLinear : aumcLinUpLogDown;
+  const subs=[...new Set(G.data.map(r=>r.Subject))];
   const results=[];
-  const aucFn=method==='linear'?aucLinear:aucLinUpLogDown;
 
-  subjects.forEach((subj,si)=>{
-    prog.style.width=((si+1)/subjects.length*85+10)+'%';
-    const rows=S.ncaData.filter(r=>r.Subject===subj).sort((a,b)=>a.Time-b.Time);
-    const ts=rows.map(r=>r.Time), cs=rows.map(r=>isNaN(r.Conc)||r.Conc===null?0:r.Conc);
+  subs.forEach((subj,si)=>{
+    pg.style.width=((si+1)/subs.length*80+10)+'%';
+    const rows=G.data.filter(r=>r.Subject===subj).sort((a,b)=>a.Time-b.Time);
+    const ts=rows.map(r=>r.Time);
+    const cs=rows.map(r=>(isNaN(r.Conc)||r.Conc<0)?0:+r.Conc);
 
-    let cmaxI=0; for(let i=1;i<cs.length;i++) if(cs[i]>cs[cmaxI]) cmaxI=i;
+    // Cmax, Tmax
+    let cmaxI=0;
+    for(let i=1;i<cs.length;i++) if(cs[i]>cs[cmaxI]) cmaxI=i;
     const cmax=cs[cmaxI], tmax=ts[cmaxI];
 
-    const auc0t=aucFn(ts,cs);
-    const aumc0t=aumcLinear(ts,cs);
-
-    const lz=estimateLambdaZ(ts,cs);
-    const lambda_z=lz?lz.lambda_z:null;
-    const t_half=lambda_z?Math.LN2/lambda_z:null;
-
-    let clast=0,tlast=0;
-    for(let i=cs.length-1;i>=0;i--) if(cs[i]>0){clast=cs[i];tlast=ts[i];break;}
-
-    let auc0inf=auc0t, aumc0inf=aumc0t, mrt=null, aucExtrapPct=null;
-    if(extrap&&lambda_z&&clast>0){
-      auc0inf=auc0t+clast/lambda_z;
-      aucExtrapPct=(clast/lambda_z)/auc0inf*100;
-      aumc0inf=aumc0t+tlast*clast/lambda_z+clast/(lambda_z**2);
-      mrt=aumc0inf/auc0inf;
+    // Clast, Tlast = last positive concentration
+    let clast=0, tlastI=-1;
+    for(let i=cs.length-1;i>=0;i--){
+      if(cs[i]>0){clast=cs[i];tlastI=i;break;}
     }
-    const cl_f=auc0inf?dose/auc0inf:null;
-    const vd_f=lambda_z&&auc0inf?dose/(auc0inf*lambda_z):null;
+    if(tlastI<0){
+      results.push({subj,cmax:0,tmax:0,n_obs:0,auc0t:0,auc0inf:0,aumc0t:0,aumc0inf:0,lambda_z:null,t_half:null,r2_lz:null,r2adj_lz:null,n_lz:null,clast:0,tlast:0,cl_f:null,vd_f:null,mrt:null,pctExtrap:null,lz:null,ts,cs});
+      return;
+    }
+    const tlast=ts[tlastI];
+    const n_obs=cs.filter(c=>c>0).length;
 
-    results.push({subject:subj,cmax,tmax,auc0t,auc0inf,aumc0t,aumc0inf,lambda_z,t_half,r2_lz:lz?lz.r2:null,r2adj_lz:lz?lz.r2adj:null,clast,tlast,cl_f,vd_f,mrt,aucExtrapPct,n_lz:lz?lz.n:null,lz,ts,cs});
+    // Compute AUC ONLY from t[0] to tlast (inclusive)
+    // WinNonlin: AUC0-t uses data up to and including Clast
+    const ts_calc=ts.slice(0,tlastI+1);
+    const cs_calc=cs.slice(0,tlastI+1);
+
+    const auc0t = aucFn(ts_calc, cs_calc);
+    const aumc0t = aumcFn(ts_calc, cs_calc);
+
+    // Lambda-z (uses ALL positive points after Cmax, including those after tlast)
+    const lz = estLZ(ts, cs);
+    const lambda_z = lz?lz.lambda_z:null;
+    const t_half = lambda_z ? Math.LN2/lambda_z : null;
+
+    // AUC0-inf
+    let auc0inf=auc0t, aumc0inf=aumc0t, mrt=null, pctExtrap=null;
+    if(extrap && lambda_z && clast>0 && isFinite(lambda_z) && lambda_z>0){
+      const tail = clast/lambda_z;
+      auc0inf = auc0t + tail;
+      pctExtrap = tail/auc0inf*100;
+      const aumcTail = tlast*clast/lambda_z + clast/(lambda_z*lambda_z);
+      aumc0inf = aumc0t + aumcTail;
+      mrt = aumc0inf/auc0inf;
+    }
+
+    const cl_f = auc0inf>0 ? dose/auc0inf : null;
+    const vd_f = (lambda_z&&auc0inf>0) ? dose/(auc0inf*lambda_z) : null;
+
+    results.push({subj,cmax,tmax,n_obs,auc0t,auc0inf,aumc0t,aumc0inf,
+      lambda_z,t_half,r2_lz:lz?lz.r2:null,r2adj_lz:lz?lz.r2adj:null,
+      n_lz:lz?lz.n:null,clast,tlast,cl_f,vd_f,mrt,pctExtrap,lz,ts,cs});
   });
 
-  S.ncaResults=results;
-  prog.style.width='100%';
-  setTimeout(()=>prog.style.width='0%',900);
-  renderNCAResults(); renderNCALambda();
-  ncaTab('results');
-  notify(`NCA分析完成 · ${subjects.length}名受试者`,'ok');
+  G.ncaResults=results;
+  pg.style.width='100%';
+  setTimeout(()=>pg.style.width='0',800);
+  renderNCAResults();
+  renderNCALZ();
+  ncaTab('res');
+  notify(`NCA完成 · ${subs.length}名受试者`,'ok');
 }
 
 function renderNCAResults(){
-  const R=S.ncaResults; if(!R) return;
+  const R=G.ncaResults;if(!R) return;
   const cu=document.getElementById('nca-cu').value||'ng/mL';
   const tu=document.getElementById('nca-tu').value||'h';
-  const method=document.getElementById('nca-auc-method').value;
-  const mLabel=method==='linear'?'线性梯形法':'线性升-对数降法';
+  const mLbl=document.getElementById('nca-method').value==='linear'?'线性梯形法':'线性升-对数降法';
 
   function stats(arr){
-    const v=arr.filter(x=>x!==null&&!isNaN(x));
-    if(!v.length) return {};
-    const n=v.length, mean=v.reduce((a,b)=>a+b)/n;
+    const v=arr.filter(x=>x!==null&&!isNaN(x)&&isFinite(x));
+    if(!v.length) return{mean:'—',sd:'—',cv:'—'};
+    const n=v.length,mean=v.reduce((a,b)=>a+b)/n;
     const sd=n>1?Math.sqrt(v.reduce((s,x)=>s+(x-mean)**2,0)/(n-1)):0;
-    return {mean,sd,cv:mean?sd/mean*100:0,min:Math.min(...v),max:Math.max(...v)};
+    return{mean,sd,cv:mean?sd/mean*100:0};
   }
 
   let html='';
   if(R.length===1){
     const r=R[0];
-    html+=`<div class="rcard-grid" style="margin-bottom:14px">
-      <div class="rcard"><div class="rcard-lbl">Cmax (${cu})</div><div class="rcard-val">${fmt(r.cmax,3)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">Tmax (${tu})</div><div class="rcard-val">${fmt(r.tmax,2)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">AUC₀₋t</div><div class="rcard-val">${fmt(r.auc0t,2)}</div><div class="rcard-unit">${cu}·${tu}</div></div>
-      <div class="rcard"><div class="rcard-lbl">AUC₀₋∞</div><div class="rcard-val">${fmt(r.auc0inf,2)}</div><div class="rcard-unit">${cu}·${tu}</div></div>
-      <div class="rcard"><div class="rcard-lbl">t½ (${tu})</div><div class="rcard-val">${fmt(r.t_half,3)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">λz (${tu}⁻¹)</div><div class="rcard-val">${fmt(r.lambda_z,4)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">CL/F</div><div class="rcard-val">${fmt(r.cl_f,3)}</div><div class="rcard-unit">L/${tu}</div></div>
-      <div class="rcard"><div class="rcard-lbl">Vd/F (L)</div><div class="rcard-val">${fmt(r.vd_f,2)}</div></div>
+    html+=`<div class="rcg" style="margin-bottom:11px">
+      <div class="rc"><div class="rl">Cmax</div><div class="rv">${fmt(r.cmax,3)}</div><div class="ru">${cu}</div></div>
+      <div class="rc"><div class="rl">Tmax</div><div class="rv">${fmt(r.tmax,2)}</div><div class="ru">${tu}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋t</div><div class="rv">${fmt(r.auc0t,2)}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋∞</div><div class="rv">${fmt(r.auc0inf,2)}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">t½ (${tu})</div><div class="rv">${fmt(r.t_half,3)}</div></div>
+      <div class="rc"><div class="rl">λz</div><div class="rv">${fmt(r.lambda_z,4)}</div><div class="ru">${tu}⁻¹</div></div>
+      <div class="rc"><div class="rl">CL/F</div><div class="rv">${fmt(r.cl_f,3)}</div><div class="ru">L/${tu}</div></div>
+      <div class="rc"><div class="rl">Vd/F (L)</div><div class="rv">${fmt(r.vd_f,2)}</div></div>
     </div>`;
   }
 
-  html+=`<div class="section-hdr" style="margin-top:4px"><h2>个体NCA参数汇总</h2></div>
-  <div class="data-table-wrap"><div class="table-scroll">
-  <table class="pk-table"><thead><tr>
-    <th>受试者</th><th>Cmax<br><sub>${cu}</sub></th><th>Tmax<br><sub>${tu}</sub></th>
-    <th>AUC₀₋t<br><sub>${cu}·${tu}</sub></th><th>AUC₀₋∞<br><sub>${cu}·${tu}</sub></th>
-    <th>AUC外推%</th><th>λz<br><sub>${tu}⁻¹</sub></th><th>t½<br><sub>${tu}</sub></th>
-    <th>R²(λz)</th><th>CL/F<br><sub>L/${tu}</sub></th><th>Vd/F<br><sub>L</sub></th><th>MRT<br><sub>${tu}</sub></th>
+  html+=`<div class="sh"><h2>NCA参数 — 个体汇总</h2></div>
+  <div class="tw"><div class="ts"><table class="pt"><thead><tr>
+    <th>受试者</th><th>Cmax</th><th>Tmax</th><th>AUC₀₋t</th><th>AUC₀₋∞</th>
+    <th>外推%</th><th>λz</th><th>t½(${tu})</th><th>adjR²</th>
+    <th>Clast</th><th>Tlast</th><th>CL/F</th><th>Vd/F</th><th>MRT</th>
   </tr></thead><tbody>`;
-  R.forEach(r=>{html+=`<tr>
-    <td style="font-weight:600">${r.subject}</td><td>${fmt(r.cmax,3)}</td><td>${fmt(r.tmax,2)}</td>
-    <td>${fmt(r.auc0t,2)}</td><td>${fmt(r.auc0inf,2)}</td><td>${fmt(r.aucExtrapPct,1)}</td>
-    <td>${fmt(r.lambda_z,5)}</td><td>${fmt(r.t_half,3)}</td><td>${fmt(r.r2_lz,4)}</td>
-    <td>${fmt(r.cl_f,4)}</td><td>${fmt(r.vd_f,3)}</td><td>${fmt(r.mrt,3)}</td></tr>`;});
+
+  R.forEach(r=>{
+    html+=`<tr><td style="font-weight:600">${r.subj}</td>
+      <td>${fmt(r.cmax,3)}</td><td>${fmt(r.tmax,2)}</td>
+      <td>${fmt(r.auc0t,2)}</td><td>${fmt(r.auc0inf,2)}</td>
+      <td>${fmt(r.pctExtrap,1)}</td><td>${fmt(r.lambda_z,5)}</td>
+      <td>${fmt(r.t_half,3)}</td><td>${fmt(r.r2adj_lz,4)}</td>
+      <td>${fmt(r.clast,3)}</td><td>${fmt(r.tlast,2)}</td>
+      <td>${fmt(r.cl_f,4)}</td><td>${fmt(r.vd_f,3)}</td>
+      <td>${fmt(r.mrt,3)}</td></tr>`;
+  });
 
   if(R.length>1){
-    const cols=['cmax','tmax','auc0t','auc0inf','aucExtrapPct','lambda_z','t_half','r2_lz','cl_f','vd_f','mrt'];
+    const cols=['cmax','tmax','auc0t','auc0inf','lambda_z','t_half','cl_f','vd_f'];
     [['均值','mean'],['SD','sd'],['CV%','cv']].forEach(([lbl,key])=>{
-      html+=`<tr class="stat-row"><td style="color:var(--accent);font-weight:600">${lbl}</td>`;
-      cols.forEach(c=>{
-        const s=stats(R.map(r=>r[c]));
-        const v=s[key];
-        html+=`<td>${v!==undefined&&!isNaN(v)?v.toFixed(key==='cv'?1:3):'—'}</td>`;
-      });
-      html+='</tr>';
+      html+=`<tr class="sr"><td style="color:var(--ac);font-weight:700">${lbl}</td>`;
+      cols.forEach(c=>{const s=stats(R.map(r=>r[c]));const v=s[key];html+=`<td>${typeof v==='number'?v.toFixed(key==='cv'?1:3):'—'}</td>`;});
+      html+='<td></td><td></td><td></td><td></td><td></td><td></td></tr>';
     });
   }
   html+=`</tbody></table></div></div>
-  <div class="info-box" style="margin-top:10px;font-size:10px">
-    AUC方法：${mLabel} · λz：末端对数线性回归（自动最优选点，≥3点，Cmax之后） · AUC₀₋∞ = AUC₀₋t + Clast/λz
+  <div class="ib" style="margin-top:8px;font-size:9px">
+    AUC方法：${mLbl} · AUC₀₋t计算至Clast（最后正浓度） · λz：末端对数线性回归（自动最优，≥3点，Cmax之后） · AUC₀₋∞=AUC₀₋t+Clast/λz
   </div>`;
-  document.getElementById('nca-results-wrap').innerHTML=html;
+  document.getElementById('nca-res-wrap').innerHTML=html;
 }
 
-function renderNCALambda(){
-  if(!S.ncaResults) return;
-  const R=S.ncaResults;
+function renderNCALZ(){
+  if(!G.ncaResults) return;
   let html='';
-  R.forEach(r=>{
-    html+=`<div class="chart-wrap" style="margin-bottom:12px">
-      <div class="chart-title"><span>${r.subject}</span>
-        <span style="font-family:var(--mono);font-size:11px;display:flex;gap:14px">
+  G.ncaResults.forEach(r=>{
+    html+=`<div class="cw" style="margin-bottom:10px">
+      <div class="ct"><span>${r.subj} λz拟合</span>
+        <span style="font-size:9px;font-family:var(--mono);display:flex;gap:10px">
           <span>λz=${fmt(r.lambda_z,4)}</span><span>t½=${fmt(r.t_half,3)}</span>
-          <span>R²=${fmt(r.r2_lz,4)}</span><span>adj.R²=${fmt(r.r2adj_lz,4)}</span>
-          <span>n=${r.n_lz||'—'}</span>
+          <span>adjR²=${fmt(r.r2adj_lz,4)}</span><span>n=${r.n_lz||'—'}</span>
         </span>
       </div>
-      <div class="chart-canvas-wrap" style="height:200px"><canvas id="lzc-${r.subject.replace(/\s/g,'_')}"></canvas></div>
+      <div style="height:180px;position:relative"><canvas id="lzc-${r.subj.replace(/[^a-z0-9]/gi,'_')}"></canvas></div>
     </div>`;
   });
-  document.getElementById('nca-lambda-wrap').innerHTML=html;
-  R.forEach(r=>{
-    const cid='lzc-'+r.subject.replace(/\s/g,'_');
-    const ctx=document.getElementById(cid); if(!ctx||!r.lz) return;
+  document.getElementById('nca-lz-wrap').innerHTML=html||'<div style="color:var(--mu);text-align:center;padding:28px">无λz拟合数据</div>';
+  G.ncaResults.forEach(r=>{
+    if(!r.lz) return;
+    const cid='lzc-'+r.subj.replace(/[^a-z0-9]/gi,'_');
+    const ctx=document.getElementById(cid);if(!ctx) return;
     const lzR=r.lz;
-    const fittedPts=lzR.pts;
-    const tMin=fittedPts[0].t,tMax=fittedPts[fittedPts.length-1].t*1.1;
+    const fps=lzR.pts;
+    const tMin=fps[0].t,tMax=fps[fps.length-1].t*1.12;
     const regLine=[];
-    for(let t=tMin;t<=tMax;t+=(tMax-tMin)/40) regLine.push({x:t,y:Math.exp(lzR.intercept-r.lambda_z*t)});
-    new Chart(ctx,{type:'scatter',data:{datasets:[
-      {label:'全部点',data:r.ts.filter((_,i)=>r.cs[i]>0).map((t,i)=>({x:t,y:r.cs[r.ts.filter((_,j)=>r.cs[j]>0).map((_,k)=>k)[i]]})),backgroundColor:'rgba(100,116,139,.7)',pointRadius:4},
-      {label:'λz拟合点',data:fittedPts.map(p=>({x:p.t,y:p.c})),backgroundColor:'rgba(0,212,255,.9)',pointRadius:6},
-      {label:`回归线 R²=${fmt(r.r2_lz,4)}`,data:regLine,type:'line',borderColor:'rgba(245,158,11,.85)',borderWidth:2,pointRadius:0,tension:0}
+    for(let t=tMin;t<=tMax;t+=(tMax-tMin)/50) regLine.push({x:t,y:Math.exp(lzR.intercept-r.lambda_z*t)});
+    // All positive pts
+    const allPts=r.ts.map((t,i)=>r.cs[i]>0?{x:t,y:r.cs[i]}:null).filter(Boolean);
+    dKill(cid);
+    G.charts[cid]=new Chart(ctx,{type:'scatter',data:{datasets:[
+      {label:'所有点',data:allPts,backgroundColor:'rgba(100,116,139,.65)',pointRadius:4},
+      {label:'λz拟合点',data:fps.map(p=>({x:p.t,y:p.c})),backgroundColor:'rgba(0,212,255,.9)',pointRadius:6},
+      {label:'回归线',data:regLine,type:'line',borderColor:'rgba(245,158,11,.85)',borderWidth:2,pointRadius:0,tension:0}
     ]},options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}},
-      y:{type:'logarithmic',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}});
+      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+      y:{type:'logarithmic',title:{display:true,text:'浓度(log)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+    },plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}}}});
   });
 }
 
-// ──────────────────────────────────────────
-// NCA PLOT
-// ──────────────────────────────────────────
 function renderNCAPlot(){
-  if(!S.ncaData) return;
-  const scale=document.getElementById('nca-plot-scale').value;
-  const subjects=[...new Set(S.ncaData.map(r=>r.Subject))];
-  const COLS=['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6','#06b6d4'];
-  const makeDS=(subj,i,logY)=>{
-    const rows=S.ncaData.filter(r=>r.Subject===subj).sort((a,b)=>a.Time-b.Time);
-    return{label:subj,data:rows.filter(r=>!logY||r.Conc>0).map(r=>({x:r.Time,y:r.Conc})),
-      borderColor:COLS[i%COLS.length],backgroundColor:COLS[i%COLS.length]+'28',
-      pointBackgroundColor:COLS[i%COLS.length],pointRadius:5,tension:.32,fill:false};
+  if(!G.data) return;
+  const scale=document.getElementById('nca-yscale').value;
+  const subs=[...new Set(G.data.map(r=>r.Subject))];
+  const COLS=['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
+  const mkDS=(s,i,logY)=>{
+    const rows=G.data.filter(r=>r.Subject===s).sort((a,b)=>a.Time-b.Time);
+    return{label:s,data:rows.filter(r=>!logY||r.Conc>0).map(r=>({x:r.Time,y:r.Conc})),
+      borderColor:COLS[i%7],backgroundColor:COLS[i%7]+'20',pointRadius:4,tension:.3,fill:false};
   };
-  destroyChart('ncaMain');
-  S.charts['ncaMain']=new Chart(document.getElementById('nca-chart'),{type:'line',data:{datasets:subjects.map((s,i)=>makeDS(s,i,scale==='log'))},
+  const scaleType=scale==='log'?'logarithmic':'linear';
+  dKill('ncaM');
+  G.charts['ncaM']=new Chart(document.getElementById('nca-chart-main'),{type:'line',
+    data:{datasets:subs.map((s,i)=>mkDS(s,i,scale==='log'))},
     options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}},
-      y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}}
+      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+      y:{type:scaleType,title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
     },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
-  destroyChart('ncaSemi');
-  S.charts['ncaSemi']=new Chart(document.getElementById('nca-semilog'),{type:'line',data:{datasets:subjects.map((s,i)=>makeDS(s,i,true))},
+  dKill('ncaS');
+  G.charts['ncaS']=new Chart(document.getElementById('nca-chart-semi'),{type:'line',
+    data:{datasets:subs.map((s,i)=>mkDS(s,i,true))},
     options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}},
-      y:{type:'logarithmic',title:{display:true,text:'浓度 (对数)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}}
+      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+      y:{type:'logarithmic',title:{display:true,text:'浓度(log)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
     },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
 }
 
-// ──────────────────────────────────────────
-// DATA LOADING
-// ──────────────────────────────────────────
-function normalizeData(rows){
-  return rows.map(row=>{
-    const r={};
-    Object.keys(row).forEach(k=>{
-      const kl=k.toLowerCase().trim();
-      if(['subject','id','subj','sub'].includes(kl)) r.Subject=String(row[k]).trim();
-      else if(['time','t','hr','hour'].includes(kl)) r.Time=+row[k];
-      else if(['conc','concentration','dv','cp','y','c'].includes(kl)) r.Conc=+row[k];
-    });
-    if(!r.Subject) r.Subject='S01';
-    return r;
-  }).filter(r=>!isNaN(r.Time)&&r.Time!==undefined&&!isNaN(r.Conc)&&r.Conc!==undefined);
+function exportNCACSV(){
+  if(!G.ncaResults){notify('请先运行NCA分析','warn');return;}
+  const h=['Subject','Cmax','Tmax','AUC0t','AUC0inf','pctExtrap','lambda_z','t_half','R2_lz','adjR2_lz','Clast','Tlast','CL_F','Vd_F','MRT'];
+  const rows=G.ncaResults.map(r=>[r.subj,fmt(r.cmax,4),fmt(r.tmax,4),fmt(r.auc0t,4),fmt(r.auc0inf,4),fmt(r.pctExtrap,2),fmt(r.lambda_z,6),fmt(r.t_half,4),fmt(r.r2_lz,6),fmt(r.r2adj_lz,6),fmt(r.clast,4),fmt(r.tlast,4),fmt(r.cl_f,5),fmt(r.vd_f,4),fmt(r.mrt,4)]);
+  const csv=[h,...rows].map(r=>r.join(',')).join('\n');
+  dlText(csv,'NCA_Results.csv','text/csv');
+  notify('CSV已导出','ok');
 }
-
-function processNCAData(data){
-  S.ncaData=normalizeData(data);
-  const subjs=[...new Set(S.ncaData.map(r=>r.Subject))];
-  document.getElementById('nca-subj-list').innerHTML=subjs.map(s=>`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></div><span>${s}</span></div>`).join('');
-  const tbody=document.getElementById('nca-raw-body');
-  tbody.innerHTML=S.ncaData.slice(0,100).map(r=>`<tr><td>${r.Subject}</td><td>${r.Time}</td><td>${(+r.Conc).toFixed(4)}</td></tr>`).join('');
-  document.getElementById('nca-data-info').textContent=`${S.ncaData.length}条记录 · ${subjs.length}名受试者`;
-  notify(`数据加载成功：${subjs.length}名受试者`,'ok');
+function dlText(txt,name,type){
+  const b=new Blob([txt],{type});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();URL.revokeObjectURL(a.href);
 }
+// ═══════════════════════════════════════════════════════════
+// CA — MODEL DEFINITIONS
+// ═══════════════════════════════════════════════════════════
+const CA_DEFS={
+  'iv-bolus-1':{label:'IV推注·一室',route:'iv-bolus',nc:1,params:[
+    {id:'k10',l:'k10 (h⁻¹) — 消除速率常数',d:.15,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1 (L) — 中央室容积',d:30,mn:.01,mx:2000,s:.1}]},
+  'iv-bolus-2':{label:'IV推注·二室',route:'iv-bolus',nc:2,params:[
+    {id:'k10',l:'k10 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k12',l:'k12 (h⁻¹)',d:.4,mn:1e-5,mx:10,s:.001},
+    {id:'k21',l:'k21 (h⁻¹)',d:.12,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1 (L)',d:20,mn:.01,mx:2000,s:.1}]},
+  'iv-bolus-3':{label:'IV推注·三室',route:'iv-bolus',nc:3,params:[
+    {id:'k10',l:'k10 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k12',l:'k12 (h⁻¹)',d:.5,mn:1e-5,mx:10,s:.001},
+    {id:'k21',l:'k21 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k13',l:'k13 (h⁻¹)',d:.1,mn:1e-5,mx:10,s:.001},
+    {id:'k31',l:'k31 (h⁻¹)',d:.04,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1 (L)',d:10,mn:.01,mx:2000,s:.1}]},
+  'iv-inf-1':{label:'IV滴注·一室',route:'iv-inf',nc:1,params:[
+    {id:'k10',l:'k10 (h⁻¹)',d:.15,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1 (L)',d:30,mn:.01,mx:2000,s:.1}]},
+  'iv-inf-2':{label:'IV滴注·二室',route:'iv-inf',nc:2,params:[
+    {id:'k10',l:'k10 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k12',l:'k12 (h⁻¹)',d:.4,mn:1e-5,mx:10,s:.001},
+    {id:'k21',l:'k21 (h⁻¹)',d:.12,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1 (L)',d:20,mn:.01,mx:2000,s:.1}]},
+  'iv-inf-3':{label:'IV滴注·三室',route:'iv-inf',nc:3,params:[
+    {id:'k10',l:'k10 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k12',l:'k12 (h⁻¹)',d:.5,mn:1e-5,mx:10,s:.001},
+    {id:'k21',l:'k21 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k13',l:'k13 (h⁻¹)',d:.1,mn:1e-5,mx:10,s:.001},
+    {id:'k31',l:'k31 (h⁻¹)',d:.04,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1 (L)',d:10,mn:.01,mx:2000,s:.1}]},
+  'ev-1':{label:'血管外·一室',route:'ev',nc:1,params:[
+    {id:'ka', l:'Ka (h⁻¹) — 吸收速率常数',d:1.5,mn:1e-4,mx:20,s:.01},
+    {id:'k10',l:'k10 (h⁻¹) — 消除速率常数',d:.15,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'Vd/F (L) — 表观分布容积',d:30,mn:.01,mx:2000,s:.1}]},
+  'ev-2':{label:'血管外·二室',route:'ev',nc:2,params:[
+    {id:'ka', l:'Ka (h⁻¹)',d:1.5,mn:1e-4,mx:20,s:.01},
+    {id:'k10',l:'k10 (h⁻¹)',d:.2,mn:1e-5,mx:10,s:.001},
+    {id:'k12',l:'k12 (h⁻¹)',d:.4,mn:1e-5,mx:10,s:.001},
+    {id:'k21',l:'k21 (h⁻¹)',d:.12,mn:1e-5,mx:10,s:.001},
+    {id:'V1', l:'V1/F (L)',d:20,mn:.01,mx:2000,s:.1}]}
+};
 
-function parseCSV(file,type){Papa.parse(file,{header:true,dynamicTyping:true,skipEmptyLines:true,complete:r=>{if(type==='nca') processNCAData(r.data);}});}
-function loadNCAFile(e){const f=e.target.files[0];if(f) parseCSV(f,'nca');}
-function loadManualData(){
-  const txt=document.getElementById('manual-data').value.trim();
-  Papa.parse(txt,{header:true,dynamicTyping:true,skipEmptyLines:true,complete:r=>{processNCAData(r.data);closeModal('modal-manual');}});
+function getCAKey(){
+  return `${document.getElementById('ca-route').value}-${document.getElementById('ca-nc').value}`;
 }
-function updateNCARoute(){document.getElementById('nca-tinf-row').style.display=document.getElementById('nca-route').value==='iv-inf'?'flex':'none';}
-
-// DEMO DATA
-const DEMO=[
-  {Subject:'S01',Time:0,Conc:0},{Subject:'S01',Time:0.25,Conc:2.84},{Subject:'S01',Time:0.5,Conc:6.57},
-  {Subject:'S01',Time:1,Conc:11.5},{Subject:'S01',Time:1.5,Conc:13.8},{Subject:'S01',Time:2,Conc:13.2},
-  {Subject:'S01',Time:3,Conc:11.4},{Subject:'S01',Time:4,Conc:9.21},{Subject:'S01',Time:6,Conc:6.09},
-  {Subject:'S01',Time:8,Conc:3.92},{Subject:'S01',Time:12,Conc:1.72},{Subject:'S01',Time:24,Conc:0.42},
-  {Subject:'S02',Time:0,Conc:0},{Subject:'S02',Time:0.25,Conc:3.12},{Subject:'S02',Time:0.5,Conc:7.23},
-  {Subject:'S02',Time:1,Conc:12.8},{Subject:'S02',Time:1.5,Conc:14.9},{Subject:'S02',Time:2,Conc:14.1},
-  {Subject:'S02',Time:3,Conc:12.1},{Subject:'S02',Time:4,Conc:9.87},{Subject:'S02',Time:6,Conc:6.52},
-  {Subject:'S02',Time:8,Conc:4.21},{Subject:'S02',Time:12,Conc:1.85},{Subject:'S02',Time:24,Conc:0.47},
-  {Subject:'S03',Time:0,Conc:0},{Subject:'S03',Time:0.25,Conc:2.51},{Subject:'S03',Time:0.5,Conc:5.89},
-  {Subject:'S03',Time:1,Conc:10.3},{Subject:'S03',Time:1.5,Conc:12.5},{Subject:'S03',Time:2,Conc:12.0},
-  {Subject:'S03',Time:3,Conc:10.2},{Subject:'S03',Time:4,Conc:8.34},{Subject:'S03',Time:6,Conc:5.52},
-  {Subject:'S03',Time:8,Conc:3.56},{Subject:'S03',Time:12,Conc:1.57},{Subject:'S03',Time:24,Conc:0.39}
-];
-function loadDemo(){processNCAData(DEMO);showPage('nca');notify('示例数据已加载（3名受试者，口服给药）','ok');}
-function loadCADemo(){
-  document.getElementById('ca-raw').value=`0,0\n0.25,2.84\n0.5,6.57\n1,11.5\n1.5,13.8\n2,13.2\n3,11.4\n4,9.21\n6,6.09\n8,3.92\n12,1.72\n24,0.42`;
-  notify('示例数据已加载','ok');
-}
-
-// ──────────────────────────────────────────
-// CA (COMPARTMENTAL ANALYSIS)
-// ──────────────────────────────────────────
-function getCAModelKey(){
-  const route=document.getElementById('ca-route').value;
-  const nc=document.getElementById('ca-ncomp').value;
-  return `${route}-${nc}`;
-}
-
 function updateCAModel(){
-  const route=document.getElementById('ca-route').value;
-  const nc=+document.getElementById('ca-ncomp').value;
-  // Hide 3-cpt for EV
-  document.getElementById('ca-3c-opt').style.display=route==='ev'?'none':'block';
-  if(route==='ev'&&nc===3) document.getElementById('ca-ncomp').value='2';
-  document.getElementById('ca-tinf-row').style.display=route==='iv-inf'?'flex':'none';
-  // Render param panel
-  const key=getCAModelKey();
-  const def=CA_MODEL_DEFS[key]; if(!def) return;
-  let html='';
+  const r=document.getElementById('ca-route').value;
+  const nc=+document.getElementById('ca-nc').value;
+  document.getElementById('ca-tinf-row').style.display=r==='iv-inf'?'flex':'none';
+  const nc3=document.getElementById('nc3opt');
+  nc3.style.display=r==='ev'?'none':'';
+  if(r==='ev'&&nc===3) document.getElementById('ca-nc').value='2';
+  const key=getCAKey();
+  const def=CA_DEFS[key];if(!def) return;
+  let html='<div class="pg2">';
   def.params.forEach(p=>{
-    html+=`<div class="form-row"><label class="form-label">${p.lbl}</label>
-      <input class="form-input" id="ca-p-${p.id}" type="number" value="${p.def}" min="${p.min}" max="${p.max}" step="${p.step}"></div>`;
+    html+=`<div class="fr"><label class="fl" style="font-size:8px;line-height:1.3">${p.l}</label>
+      <input class="fi" id="cp-${p.id}" type="number" value="${p.d}" min="${p.mn}" max="${p.mx}" step="${p.s}"></div>`;
   });
-  document.getElementById('ca-init-params-panel').innerHTML=html;
+  html+='</div>';
+  document.getElementById('ca-init-panel').innerHTML=html;
 }
 
-function parseCAData(){
-  const lines=document.getElementById('ca-raw').value.trim().split('\n');
-  const data=[];
-  lines.forEach(l=>{
-    const ps=l.split(/[,\t\s]+/).map(Number);
-    if(ps.length>=2&&!isNaN(ps[0])&&!isNaN(ps[1])) data.push({t:ps[0],c:ps[1]});
-  });
-  return data;
-}
-
-// LM fitting
-function lvmFit(data, modelFn, paramNames, initParams, weightMode, maxIter){
-  let p={...initParams};
-  let lam=0.01;
-  const eps=1e-5;
-
-  function getWeights(obs){
-    return obs.map(c=>{
-      if(weightMode==='1_C') return c>0?1/c:1;
-      if(weightMode==='1_C2') return c>0?1/(c*c):1;
-      if(weightMode==='1_sqrtC') return c>0?1/Math.sqrt(c):1;
-      return 1;
-    });
+function getCAData(){
+  if(!G.data) return [];
+  const subj=document.getElementById('ca-subj').value;
+  if(subj){
+    return G.data.filter(r=>r.Subject===subj).sort((a,b)=>a.Time-b.Time).map(r=>({t:r.Time,c:+r.Conc}));
   }
+  const tMap={};
+  G.data.forEach(r=>{if(!tMap[r.Time]) tMap[r.Time]=[];tMap[r.Time].push(+r.Conc);});
+  return Object.entries(tMap).map(([t,cs])=>({t:+t,c:cs.reduce((a,b)=>a+b)/cs.length})).sort((a,b)=>a.t-b.t);
+}
 
+// ═══════════════════════════════════════════════════════════
+// RK4 ODE ENGINE
+// ═══════════════════════════════════════════════════════════
+function rk4Sim(tGrid,p,route,nc,dose,tinf,nDose,tau){
+  const{k10=.15,k12=0,k21=0,k13=0,k31=0,ka=1.5,V1=30}=p;
+  function derivs(t,X,ir){
+    if(route==='ev'){
+      if(nc===1) return[-ka*X[0], ka*X[0]-k10*X[1]];
+      if(nc===2) return[-ka*X[0], ka*X[0]-(k10+k12)*X[1]+k21*X[2], k12*X[1]-k21*X[2]];
+      return[-ka*X[0], ka*X[0]-(k10+k12+k13)*X[1]+k21*X[2]+k31*X[3], k12*X[1]-k21*X[2], k13*X[1]-k31*X[3]];
+    }
+    if(nc===1) return[ir-k10*X[0]];
+    if(nc===2) return[ir-(k10+k12)*X[0]+k21*X[1], k12*X[0]-k21*X[1]];
+    return[ir-(k10+k12+k13)*X[0]+k21*X[1]+k31*X[2], k12*X[0]-k21*X[1], k13*X[0]-k31*X[2]];
+  }
+  function getIR(t){
+    if(route!=='iv-inf') return 0;
+    let r=0;for(let d=0;d<nDose;d++){const td=d*tau;if(t>=td&&t<td+tinf)r+=dose/tinf;}return r;
+  }
+  function getDim(){return route==='ev'?nc+1:nc;}
+  function getC(X){return Math.max(0,(route==='ev'?X[1]:X[0])/V1);}
+  function step(t,X,dt){
+    const ir=getIR(t+dt/2);
+    const k1=derivs(t,X,ir);
+    const X2=X.map((x,i)=>x+k1[i]*dt/2);
+    const k2=derivs(t+dt/2,X2,ir);
+    const X3=X.map((x,i)=>x+k2[i]*dt/2);
+    const k3=derivs(t+dt/2,X3,ir);
+    const X4=X.map((x,i)=>x+k3[i]*dt);
+    const k4=derivs(t+dt,X4,getIR(t+dt));
+    return X.map((x,i)=>Math.max(0,x+(k1[i]+2*k2[i]+2*k3[i]+k4[i])*dt/6));
+  }
+  const dim=getDim();
+  let X=new Array(dim).fill(0);
+  const doses=Array.from({length:nDose},(_,i)=>i*tau);
+  let dDone=0;
+  // first dose at t=0
+  if(route!=='iv-inf'&&doses[0]===0){
+    if(route==='ev') X[0]+=dose; else X[0]+=dose;
+    dDone=1;
+  }
+  const result=[getC(X)];
+  let cur=tGrid[0];
+  for(let gi=1;gi<tGrid.length;gi++){
+    const next=tGrid[gi];let t=cur;
+    while(t<next-1e-10){
+      let ev=next;
+      for(let d=dDone;d<nDose;d++) if(doses[d]>t+1e-10&&doses[d]<ev) ev=doses[d];
+      if(route==='iv-inf') for(let d=0;d<nDose;d++){const te=d*tau+tinf;if(te>t+1e-10&&te<ev) ev=te;}
+      const dt=Math.min(0.05,ev-t);if(dt<1e-12) break;
+      X=step(t,X,dt);t+=dt;
+      while(dDone<nDose&&Math.abs(t-doses[dDone])<1e-9){
+        if(route!=='iv-inf'){if(route==='ev') X[0]+=dose; else X[0]+=dose;}
+        dDone++;
+      }
+    }
+    while(dDone<nDose&&Math.abs(next-doses[dDone])<1e-9){
+      if(route!=='iv-inf'){if(route==='ev') X[0]+=dose; else X[0]+=dose;}
+      dDone++;
+    }
+    result.push(getC(X));
+    cur=next;
+  }
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LM FITTING ENGINE
+// ═══════════════════════════════════════════════════════════
+function solveGE(A,b){
+  const n=b.length;const M=A.map((r,i)=>[...r,b[i]]);
+  for(let i=0;i<n;i++){
+    let mx=i;for(let r=i+1;r<n;r++) if(Math.abs(M[r][i])>Math.abs(M[mx][i])) mx=r;
+    [M[i],M[mx]]=[M[mx],M[i]];
+    if(Math.abs(M[i][i])<1e-14) return null;
+    for(let r=0;r<n;r++){if(r===i) continue;const f=M[r][i]/M[i][i];for(let c=i;c<=n;c++) M[r][c]-=f*M[i][c];}
+  }
+  return M.map((r,i)=>r[n]/r[i]);
+}
+function getW(c,wt){
+  if(wt==='1/C') return c>0?1/c:1;
+  if(wt==='1/C2') return c>0?1/(c*c):1;
+  if(wt==='1/sqrtC') return c>0?1/Math.sqrt(c):1;
+  return 1;
+}
+function lvmFit(data,def,initP,wt,maxIter,dose,tinf){
+  const pNames=def.params.map(p=>p.id);
+  let p={...initP};
+  const ws=data.map(d=>getW(d.c,wt));
+  function predict(params){
+    const tGrid=[0,...data.map(d=>d.t)];
+    const concs=rk4Sim(tGrid,params,def.route,def.nc,dose,tinf,1,99999);
+    return data.map((_,i)=>concs[i+1]);
+  }
   function wsse(params){
-    const ws=getWeights(data.map(d=>d.c));
-    return data.reduce((s,d,i)=>{const r=d.c-modelFn(d.t,params);return s+ws[i]*r*r;},0);
+    const pr=predict(params);
+    return data.reduce((s,d,i)=>s+ws[i]*(d.c-pr[i])**2,0);
   }
-
-  function jacobian(params){
-    return data.map(d=>{
-      const row={};
-      paramNames.forEach(name=>{
-        const delta=Math.max(Math.abs(params[name])*eps,eps*0.01);
-        const p1={...params};p1[name]+=delta;
-        const p2={...params};p2[name]-=delta;
-        row[name]=(modelFn(d.t,p1)-modelFn(d.t,p2))/(2*delta);
-      });
-      return row;
-    });
-  }
-
-  let curW=wsse(p);
-  const ws=getWeights(data.map(d=>d.c));
-
+  let curW=wsse(p);let lam=.01;
   for(let iter=0;iter<maxIter;iter++){
-    const n=paramNames.length;
-    const J=jacobian(p);
-    const res=data.map((d,i)=>d.c-modelFn(d.t,p));
+    const pr=predict(p);
+    const res=data.map((d,i)=>d.c-pr[i]);
+    const n=pNames.length;
+    const eps=1e-5;
+    const J=data.map(()=>({}));
+    pNames.forEach(name=>{
+      const delta=Math.max(Math.abs(p[name])*eps,1e-6);
+      const p1={...p};p1[name]+=delta;
+      const p2={...p};p2[name]-=delta;
+      const pr1=predict(p1),pr2=predict(p2);
+      data.forEach((_,di)=>{J[di][name]=(pr1[di]-pr2[di])/(2*delta);});
+    });
     const JtWJ=Array.from({length:n},()=>new Array(n).fill(0));
     const JtWr=new Array(n).fill(0);
     data.forEach((_,di)=>{
-      paramNames.forEach((pi,i)=>{
+      pNames.forEach((pi,i)=>{
         JtWr[i]+=ws[di]*J[di][pi]*res[di];
-        paramNames.forEach((pj,j)=>{JtWJ[i][j]+=ws[di]*J[di][pi]*J[di][pj];});
+        pNames.forEach((pj,j)=>{JtWJ[i][j]+=ws[di]*J[di][pi]*J[di][pj];});
       });
     });
     for(let i=0;i<n;i++) JtWJ[i][i]*=(1+lam);
-    const delta=solveLS(JtWJ,JtWr); if(!delta){lam=Math.min(lam*10,1e9);continue;}
+    const delta=solveGE(JtWJ,JtWr);
+    if(!delta){lam=Math.min(lam*10,1e9);continue;}
     const np={...p};
-    paramNames.forEach((name,i)=>{np[name]=Math.max(p[name]+delta[i],1e-6);});
+    pNames.forEach((name,i)=>{
+      const def_p=def.params.find(pp=>pp.id===name);
+      np[name]=Math.max(p[name]+delta[i],def_p?def_p.mn:1e-6);
+    });
     const nw=wsse(np);
     if(nw<curW){p=np;curW=nw;lam=Math.max(lam/3,1e-9);}
-    else{lam=Math.min(lam*10,1e9);}
-    if(Math.max(...delta.map(Math.abs))<1e-9) break;
+    else lam=Math.min(lam*10,1e9);
+    if(delta.every(d=>Math.abs(d)<1e-9)) break;
   }
-
-  const n=data.length,np=paramNames.length;
-  const pred=data.map(d=>modelFn(d.t,p));
-  const res=data.map((d,i)=>d.c-pred[i]);
-  const wres=res.map((r,i)=>ws[i]*r*r);
-  const ssRes=wres.reduce((a,b)=>a+b);
-  const meanC=data.reduce((s,d)=>s+d.c,0)/n;
-  const ssTot=data.reduce((s,d)=>s+(d.c-meanC)**2,0);
-  const r2=1-res.reduce((s,r)=>s+r*r,0)/ssTot;
-  const aic=n*Math.log(ssRes/n)+2*np;
-  const bic=n*Math.log(ssRes/n)+np*Math.log(n);
-  const rmse=Math.sqrt(res.reduce((s,r)=>s+r*r,0)/(n-np));
-  return{params:p,wsse:ssRes,r2,aic,bic,rmse,pred,res,ws};
+  const pr=predict(p);
+  const res=data.map((d,i)=>d.c-pr[i]);
+  const n=data.length,np=pNames.length;
+  const ssRes=res.reduce((s,r)=>s+r*r,0);
+  const mean=data.reduce((s,d)=>s+d.c,0)/n;
+  const ssTot=data.reduce((s,d)=>s+(d.c-mean)**2,0);
+  const r2=1-ssRes/ssTot;
+  const aic=n*Math.log(Math.max(curW/n,1e-300))+2*np;
+  const bic=n*Math.log(Math.max(curW/n,1e-300))+np*Math.log(n);
+  const rmse=Math.sqrt(ssRes/Math.max(n-np,1));
+  return{params:p,wsse:curW,r2,aic,bic,rmse,pred:pr,res,ws};
 }
 
-function buildCAModelFn(key, dose, tinf){
-  const [route,nc_s]=key.split('-'); const nc=+nc_s; // Wait, key is like 'iv-bolus-2' or 'ev-1'
-  // Actually key format is route-nc, need to handle 'iv-bolus' properly
-  const def=CA_MODEL_DEFS[key]; if(!def) return ()=>0;
-  const route2=def.route; const nc2=def.nc;
-
-  return function(t, params){
-    if(t<=0) return route2==='iv-bolus'?params.V1>0?dose/params.V1:0:0;
-    const tGrid=[0,t]; const nSteps=Math.max(100,Math.ceil(t/0.05));
-    const tFine=Array.from({length:nSteps+1},(_,i)=>t*i/nSteps);
-    const concs=simulateMultiDose(tFine,params,route2,nc2,dose,tinf||1,1,9999);
-    return concs[concs.length-1];
-  };
-}
-
-function runCA(){
-  const data=parseCAData();
-  if(data.length<3){notify('数据不足（至少3个时间点）','warn');return;}
-  const key=getCAModelKey();
-  const def=CA_MODEL_DEFS[key]; if(!def){notify('未知模型','err');return;}
+function runCA(wtOverride){
+  if(!G.data){notify('请先加载数据','warn');return;}
+  const data=getCAData();
+  if(data.length<3){notify('有效数据点不足（至少3个）','warn');return;}
+  const key=getCAKey();
+  const def=CA_DEFS[key];if(!def){notify('未知模型','err');return;}
   const dose=+document.getElementById('ca-dose').value||100;
   const tinf=+document.getElementById('ca-tinf').value||1;
-  const weightMode=document.getElementById('ca-weight').value;
-  const maxIter=+document.getElementById('ca-maxiter').value||500;
-
+  const wt=wtOverride||document.getElementById('ca-wt').value;
+  const maxIter=+document.getElementById('ca-maxiter').value||600;
   const initP={};
-  def.params.forEach(p=>{initP[p.id]=+document.getElementById('ca-p-'+p.id).value||p.def;});
-  const paramNames=def.params.map(p=>p.id);
-
-  document.getElementById('ca-prog').style.width='20%';
-  notify('正在拟合...','info');
-
-  // Use ODE-based model function (numerical)
-  const tFull=data.map(d=>d.t);
-  const tMax=Math.max(...tFull)*1.05;
-
-  function modelFn(t, params){
-    if(t<0) return 0;
-    const nSteps=Math.max(50,Math.ceil(t/0.1));
-    const tGrid=Array.from({length:nSteps+1},(_,i)=>t*i/nSteps);
-    const c=simulateMultiDose(tGrid,params,def.route,def.nc,dose,tinf,1,99999);
-    return c[c.length-1];
-  }
-
+  def.params.forEach(pp=>{const el=document.getElementById('cp-'+pp.id);initP[pp.id]=el?+el.value:pp.d;});
+  document.getElementById('ca-pg').style.width='20%';
+  notify(`拟合中 [${def.label}][${wt}]...`,'info');
   setTimeout(()=>{
     try{
-      const fit=lvmFit(data,modelFn,paramNames,initP,weightMode,maxIter);
-      const smKey=def.label;
-      S.caResults={fit,data,def,key,dose,tinf,modelFn,weightMode};
-      S.modelHistory.push({label:def.label,key,r2:fit.r2,aic:fit.aic,bic:fit.bic,rmse:fit.rmse,params:fit.params});
-      document.getElementById('ca-prog').style.width='100%';
-      setTimeout(()=>document.getElementById('ca-prog').style.width='0%',800);
-      renderCAFit(); renderCAParams(); renderCADiag(); renderCACompare();
+      const fit=lvmFit(data,def,initP,wt,maxIter,dose,tinf);
+      G.caResult={fit,data,def,key,dose,tinf,wt};
+      G.caHistory.push({label:def.label,wt,r2:fit.r2,aic:fit.aic,bic:fit.bic,
+        rmse:fit.rmse,wsse:fit.wsse,params:fit.params,def,dose,tinf,data});
+      document.getElementById('ca-pg').style.width='100%';
+      setTimeout(()=>document.getElementById('ca-pg').style.width='0',700);
+      renderCAFit();renderCAParams();renderCADiag();renderCACmp();
       caTab('fit');
-      notify(`拟合完成 · R²=${fit.r2.toFixed(4)} · AIC=${fit.aic.toFixed(2)}`,'ok');
+      notify(`拟合完成 [${wt}] R²=${fit.r2.toFixed(4)} AIC=${fit.aic.toFixed(2)}`,'ok');
     }catch(e){
-      document.getElementById('ca-prog').style.width='0%';
-      notify('拟合失败：'+e.message,'err');
-      console.error(e);
+      document.getElementById('ca-pg').style.width='0';
+      notify('拟合失败：'+e.message,'err');console.error(e);
     }
-  },10);
+  },12);
+}
+function runAllWts(){
+  if(!G.data){notify('请先加载数据','warn');return;}
+  let i=0;const wts=['uniform','1/C','1/C2','1/sqrtC'];
+  notify('开始比较4种加权方案...','info');
+  function next(){if(i>=wts.length){renderCACmp();caTab('cmp');notify('全部权重比较完成','ok');return;}
+    setTimeout(()=>{runCA(wts[i++]);setTimeout(next,200);},50);}
+  next();
+}
+
+// Compute NCA from fitted curve (for displaying in CA params)
+function caFittedNCA(data,fit,def,dose,tinf){
+  const tMax=Math.max(...data.map(d=>d.t));
+  const N=400;
+  const tGrid=Array.from({length:N+1},(_,i)=>tMax*i/N);
+  let concs;
+  try{concs=rk4Sim(tGrid,fit.params,def.route,def.nc,dose,tinf,1,99999);}
+  catch(e){return null;}
+  let cmaxI=0;for(let i=1;i<concs.length;i++) if(concs[i]>concs[cmaxI]) cmaxI=i;
+  const cmax=concs[cmaxI],tmax=tGrid[cmaxI];
+  // Clast
+  let clast=0,tlastI=0;
+  for(let i=concs.length-1;i>=0;i--){if(concs[i]>0.001){clast=concs[i];tlastI=i;break;}}
+  const tlast=tGrid[tlastI];
+  const auc0t=aucLinear(tGrid.slice(0,tlastI+1),concs.slice(0,tlastI+1));
+  const lz=estLZ(tGrid,concs);
+  const lambda_z=lz?lz.lambda_z:null;
+  const t_half=lambda_z?Math.LN2/lambda_z:null;
+  const auc0inf=(lambda_z&&clast>0)?auc0t+clast/lambda_z:auc0t;
+  const cl=auc0inf>0?dose/auc0inf:null;
+  const vd=(lambda_z&&auc0inf>0)?dose/(auc0inf*lambda_z):null;
+  return{cmax,tmax,auc0t,auc0inf,t_half,lambda_z,cl,vd};
 }
 
 function renderCAFit(){
-  if(!S.caResults) return;
-  const {fit,data,def,dose,tinf} = S.caResults;
+  if(!G.caResult) return;
+  const{fit,data,def,dose,tinf}=G.caResult;
   const tMax=Math.max(...data.map(d=>d.t));
-  const tFine=Array.from({length:201},(_,i)=>tMax*1.05*i/200);
-  const fitted=tFine.map(t=>{
-    const c=simulateMultiDose([0,...([t])],fit.params,def.route,def.nc,dose,tinf,1,99999);
-    return{x:t,y:c[c.length-1]};
-  });
-  destroyChart('caFit');
-  S.charts['caFit']=new Chart(document.getElementById('ca-fit-chart'),{type:'scatter',
-    data:{datasets:[
-      {label:'观测值',data:data.map(d=>({x:d.t,y:d.c})),backgroundColor:'rgba(0,212,255,.85)',pointRadius:6},
-      {label:'拟合曲线',data:fitted,type:'line',borderColor:'rgba(245,158,11,.9)',borderWidth:2.5,pointRadius:0,tension:.3,fill:false}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间 (h)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}},
-      y:{title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+  const tGrid=Array.from({length:201},(_,i)=>tMax*1.05*i/200);
+  let fConcs;
+  try{fConcs=rk4Sim([0,...tGrid],fit.params,def.route,def.nc,dose,tinf,1,99999).slice(1);}
+  catch(e){fConcs=new Array(201).fill(0);}
+  dKill('caFit');
+  G.charts['caFit']=new Chart(document.getElementById('ca-fit-cv'),{type:'scatter',data:{datasets:[
+    {label:'观测值',data:data.map(d=>({x:d.t,y:d.c})),backgroundColor:'rgba(0,212,255,.85)',pointRadius:6},
+    {label:'拟合曲线',data:tGrid.map((t,i)=>({x:t,y:fConcs[i]})),type:'line',
+     borderColor:'rgba(245,158,11,.9)',borderWidth:2.5,pointRadius:0,tension:.3,fill:false}
+  ]},options:{responsive:true,maintainAspectRatio:false,scales:{
+    x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+  },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
 
-  const wLabels={uniform:'Uniform',_1C:'1/C','1_C2':'1/C²','1_sqrtC':'1/√C'};
-  document.getElementById('ca-fit-summary').innerHTML=`
-    <div class="rcard-grid">
-      <div class="rcard"><div class="rcard-lbl">R²</div><div class="rcard-val">${fit.r2.toFixed(4)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">RMSE</div><div class="rcard-val">${fit.rmse.toFixed(4)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">AIC</div><div class="rcard-val">${fit.aic.toFixed(2)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">BIC</div><div class="rcard-val">${fit.bic.toFixed(2)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">WSSE</div><div class="rcard-val">${fit.wsse.toFixed(4)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">模型</div><div class="rcard-val" style="font-size:12px">${def.label}</div></div>
-    </div>`;
+  const nca=caFittedNCA(data,fit,def,dose,tinf);
+  const cu=document.getElementById('nca-cu')?.value||'ng/mL';
+  const tu=document.getElementById('nca-tu')?.value||'h';
+  document.getElementById('ca-fit-sum').innerHTML=`<div class="rcg">
+    <div class="rc"><div class="rl">Cmax(拟合)</div><div class="rv">${nca?fmt(nca.cmax,3):'—'}</div><div class="ru">${cu}</div></div>
+    <div class="rc"><div class="rl">Tmax(拟合)</div><div class="rv">${nca?fmt(nca.tmax,2):'—'}</div><div class="ru">${tu}</div></div>
+    <div class="rc"><div class="rl">AUC₀₋t(拟合)</div><div class="rv">${nca?fmt(nca.auc0t,2):'—'}</div><div class="ru">${cu}·${tu}</div></div>
+    <div class="rc"><div class="rl">AUC₀₋∞(拟合)</div><div class="rv">${nca?fmt(nca.auc0inf,2):'—'}</div><div class="ru">${cu}·${tu}</div></div>
+    <div class="rc"><div class="rl">R²</div><div class="rv">${fit.r2.toFixed(4)}</div></div>
+    <div class="rc"><div class="rl">RMSE</div><div class="rv">${fit.rmse.toFixed(4)}</div></div>
+    <div class="rc"><div class="rl">AIC</div><div class="rv">${fit.aic.toFixed(2)}</div></div>
+    <div class="rc"><div class="rl">模型</div><div class="rv" style="font-size:10px">${def.label}</div></div>
+  </div>`;
 }
 
 function renderCAParams(){
-  if(!S.caResults) return;
-  const {fit,def} = S.caResults;
+  if(!G.caResult) return;
+  const{fit,def,dose,tinf,data}=G.caResult;
   const p=fit.params;
-
-  // Derived parameters
-  let derived='';
-  if(def.route!=='ev'){
-    const k10=p.k10||0.15;const V1=p.V1||10;
-    const CL=k10*V1;const tHalf=Math.LN2/k10;
-    if(def.nc>=2){
-      const k12=p.k12||0,k21=p.k21||0;
-      const alpha=(k10+k12+k21+Math.sqrt((k10+k12+k21)**2-4*k10*k21))/2;
-      const beta=(k10+k12+k21-Math.sqrt((k10+k12+k21)**2-4*k10*k21))/2;
-      const tHalfBeta=Math.LN2/beta;
-      derived+=`<div class="rcard-grid" style="margin-top:12px">
-        <div class="rcard"><div class="rcard-lbl">CL (L/h)</div><div class="rcard-val">${CL.toFixed(4)}</div></div>
-        <div class="rcard"><div class="rcard-lbl">t½α (h)</div><div class="rcard-val">${(Math.LN2/alpha).toFixed(4)}</div></div>
-        <div class="rcard"><div class="rcard-lbl">t½β (h)</div><div class="rcard-val">${tHalfBeta.toFixed(4)}</div></div>
-        <div class="rcard"><div class="rcard-lbl">α (h⁻¹)</div><div class="rcard-val">${alpha.toFixed(4)}</div></div>
-        <div class="rcard"><div class="rcard-lbl">β (h⁻¹)</div><div class="rcard-val">${beta.toFixed(4)}</div></div>
-      </div>`;
-    } else {
-      derived+=`<div class="rcard-grid" style="margin-top:12px">
-        <div class="rcard"><div class="rcard-lbl">CL (L/h)</div><div class="rcard-val">${CL.toFixed(4)}</div></div>
-        <div class="rcard"><div class="rcard-lbl">t½ (h)</div><div class="rcard-val">${tHalf.toFixed(4)}</div></div>
-      </div>`;
+  const pNames=def.params.map(pp=>pp.id);
+  const k10=p.k10||.15,V1=p.V1||10;
+  const cu=document.getElementById('nca-cu')?.value||'ng/mL';
+  const tu=document.getElementById('nca-tu')?.value||'h';
+  const nca=caFittedNCA(data,fit,def,dose,tinf);
+  let derivHTML='';
+  if(def.nc>=2&&!def.route.includes('ev')){
+    const k12=p.k12||0,k21=p.k21||0;
+    const disc=(k10+k12+k21)**2-4*k10*k21;
+    if(disc>=0){
+      const alpha=(k10+k12+k21+Math.sqrt(disc))/2;
+      const beta=(k10+k12+k21-Math.sqrt(disc))/2;
+      derivHTML=`<div class="sep"></div>
+        <div class="sbh" style="margin-bottom:6px">派生参数</div>
+        <div class="rcg">
+          <div class="rc"><div class="rl">α (h⁻¹)</div><div class="rv">${alpha.toFixed(5)}</div></div>
+          <div class="rc"><div class="rl">β (h⁻¹)</div><div class="rv">${beta.toFixed(5)}</div></div>
+          <div class="rc"><div class="rl">t½α (h)</div><div class="rv">${(Math.LN2/alpha).toFixed(4)}</div></div>
+          <div class="rc"><div class="rl">t½β (h)</div><div class="rv">${(Math.LN2/beta).toFixed(4)}</div></div>
+          <div class="rc"><div class="rl">CL (L/h)</div><div class="rv">${(k10*V1).toFixed(4)}</div></div>
+        </div>`;
     }
-  } else {
-    const ka=p.ka||1,k10=p.k10||0.15,V1=p.V1||30;
-    const tmax_theo=Math.abs(ka-k10)>1e-4?Math.log(ka/k10)/(ka-k10):0;
-    derived+=`<div class="rcard-grid" style="margin-top:12px">
-      <div class="rcard"><div class="rcard-lbl">t½ (h)</div><div class="rcard-val">${(Math.LN2/k10).toFixed(4)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">Tmax理论 (h)</div><div class="rcard-val">${tmax_theo.toFixed(4)}</div></div>
-      <div class="rcard"><div class="rcard-lbl">CL/F (L/h)</div><div class="rcard-val">${(k10*V1).toFixed(4)}</div></div>
-    </div>`;
+  } else if(def.nc===1){
+    const tH=Math.LN2/k10,CL=k10*V1;
+    let extra='';
+    if(def.route==='ev'&&p.ka){
+      const tmt=Math.abs(p.ka-k10)>1e-5?Math.log(p.ka/k10)/(p.ka-k10):0;
+      extra=`<div class="rc"><div class="rl">Tmax理论</div><div class="rv">${tmt.toFixed(4)}</div></div>`;
+    }
+    derivHTML=`<div class="sep"></div>
+      <div class="sbh" style="margin-bottom:6px">派生参数</div>
+      <div class="rcg">
+        <div class="rc"><div class="rl">t½ (h)</div><div class="rv">${tH.toFixed(4)}</div></div>
+        <div class="rc"><div class="rl">CL/F (L/h)</div><div class="rv">${CL.toFixed(4)}</div></div>
+        ${extra}
+      </div>`;
   }
-
   document.getElementById('ca-params-wrap').innerHTML=`
-    <div class="section-hdr"><h2>${def.label} — 拟合参数</h2><span class="badge badge-ok">R²=${fit.r2.toFixed(4)}</span></div>
-    <div class="data-table-wrap">
-      <table class="pk-table"><thead><tr><th>参数</th><th>估计值</th><th>单位</th><th>说明</th></tr></thead>
-      <tbody>${def.params.map(pp=>`<tr class="hl">
-        <td style="font-weight:700">${pp.id}</td>
-        <td>${p[pp.id]?p[pp.id].toFixed(6):'—'}</td>
-        <td>${{ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'}[pp.id]||'—'}</td>
-        <td style="color:var(--muted);font-family:var(--sans)">${pp.lbl.split('(')[0].trim()}</td>
-      </tr>`).join('')}</tbody>
-    </table></div>
-    ${derived}
-    <div class="info-box" style="margin-top:10px;font-size:10px">
-      拟合算法：Levenberg-Marquardt (LM) · 权重：${document.getElementById('ca-weight').options[document.getElementById('ca-weight').selectedIndex].text} · 最大迭代${document.getElementById('ca-maxiter').value}次
+    <div class="sh"><h2>${def.label} — 拟合参数</h2><span class="badge b-ok">权重:${G.caResult.wt}</span></div>
+    ${nca?`<div class="rcg" style="margin-bottom:10px">
+      <div class="rc"><div class="rl">Cmax(拟合,${cu})</div><div class="rv">${fmt(nca.cmax,3)}</div></div>
+      <div class="rc"><div class="rl">Tmax(拟合,${tu})</div><div class="rv">${fmt(nca.tmax,2)}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋t</div><div class="rv">${fmt(nca.auc0t,2)}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋∞</div><div class="rv">${fmt(nca.auc0inf,2)}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">t½(${tu})</div><div class="rv">${fmt(nca.t_half,3)}</div></div>
+      <div class="rc"><div class="rl">CL/F</div><div class="rv">${fmt(nca.cl,3)}</div><div class="ru">L/${tu}</div></div>
+    </div>`:''}
+    <div class="tw" style="margin-bottom:9px"><table class="pt"><thead><tr><th>参数</th><th>估计值</th><th>单位</th><th>说明</th></tr></thead><tbody>
+      ${pNames.map(nm=>{const pp=def.params.find(x=>x.id===nm);return`<tr class="hl">
+        <td style="font-weight:700">${nm}</td>
+        <td>${p[nm]?p[nm].toFixed(6):'—'}</td>
+        <td>${{ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'}[nm]||'—'}</td>
+        <td style="font-family:var(--sans);color:var(--mu)">${(pp?.l||'').split('(')[0].trim()}</td>
+      </tr>`;}).join('')}
+    </tbody></table></div>
+    ${derivHTML}
+    <div class="ib" style="margin-top:8px;font-size:9px">
+      拟合：Levenberg-Marquardt | 权重：${G.caResult.wt} | RK4数值积分ODE | NCA参数基于拟合曲线计算
     </div>`;
 }
 
 function renderCADiag(){
-  if(!S.caResults) return;
-  const {fit,data} = S.caResults;
-  destroyChart('caRes');
-  S.charts['caRes']=new Chart(document.getElementById('ca-res-chart'),{type:'scatter',
-    data:{datasets:[
-      {label:'加权残差',data:data.map((d,i)=>({x:d.t,y:fit.res[i]*Math.sqrt(fit.ws[i])})),backgroundColor:'rgba(0,212,255,.7)',pointRadius:5},
-      {label:'零线',data:[{x:0,y:0},{x:Math.max(...data.map(d=>d.t)),y:0}],type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{title:{display:true,text:'时间 (h)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}},
-      y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
-
-  const maxC=Math.max(...data.map(d=>d.c));
-  destroyChart('caDV');
-  S.charts['caDV']=new Chart(document.getElementById('ca-dv-chart'),{type:'scatter',
-    data:{datasets:[
-      {label:'DV vs PRED',data:data.map((d,i)=>({x:fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:5},
-      {label:'对角线',data:[{x:0,y:0},{x:maxC,y:maxC}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}},
-      y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.04)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+  if(!G.caResult) return;
+  const{fit,data}=G.caResult;
+  const wRes=data.map((d,i)=>fit.res[i]*Math.sqrt(Math.max(fit.ws[i],0)));
+  dKill('caRes');
+  G.charts['caRes']=new Chart(document.getElementById('ca-res-cv'),{type:'scatter',data:{datasets:[
+    {label:'加权残差',data:data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.7)',pointRadius:5},
+    {label:'零线',data:[{x:0,y:0},{x:Math.max(...data.map(d=>d.t)),y:0}],
+     type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
+  ]},options:{responsive:true,maintainAspectRatio:false,scales:{
+    x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+  },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+  const mx=Math.max(...data.map(d=>d.c));
+  dKill('caDV');
+  G.charts['caDV']=new Chart(document.getElementById('ca-dv-cv'),{type:'scatter',data:{datasets:[
+    {label:'DV vs PRED',data:data.map((d,i)=>({x:fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:5},
+    {label:'对角线',data:[{x:0,y:0},{x:mx,y:mx}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
+  ]},options:{responsive:true,maintainAspectRatio:false,scales:{
+    x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+  },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
 }
 
-function renderCACompare(){
-  if(S.modelHistory.length<2){
-    document.getElementById('ca-compare-wrap').innerHTML='<div style="color:var(--muted);text-align:center;padding:36px">运行≥2个不同模型后可比较AIC/BIC</div>';
-    return;
-  }
-  const best=S.modelHistory.reduce((b,m)=>m.aic<b.aic?m:b);
-  let html=`<div class="section-hdr"><h2>模型比较（AIC越小越优）</h2></div>
-  <div class="data-table-wrap"><table class="pk-table"><thead>
-    <tr><th>模型</th><th>R²</th><th>RMSE</th><th>AIC</th><th>BIC</th><th>ΔAIC</th><th>优选</th></tr>
-  </thead><tbody>`;
-  const minAIC=Math.min(...S.modelHistory.map(m=>m.aic));
-  S.modelHistory.forEach(m=>{
-    const isBest=m===best;
-    html+=`<tr${isBest?' class="hl"':''}><td>${m.label}</td><td>${m.r2.toFixed(4)}</td><td>${m.rmse.toFixed(4)}</td>
-      <td>${m.aic.toFixed(2)}</td><td>${m.bic.toFixed(2)}</td><td>${(m.aic-minAIC).toFixed(2)}</td>
-      <td>${isBest?'<span class="badge badge-ok">✓ 最优</span>':''}</td></tr>`;
+function renderCACmp(){
+  const H=G.caHistory;
+  if(H.length<2){document.getElementById('ca-cmp-wrap').innerHTML='<div style="color:var(--mu);text-align:center;padding:32px">运行≥2次拟合后可比较</div>';return;}
+  const minAIC=Math.min(...H.map(m=>m.aic));
+  let html=`<div class="sh"><h2>模型/权重比较</h2><span class="badge b-info">${H.length}次拟合</span></div>
+  <div class="ib" style="margin-bottom:7px;font-size:9px">ΔAIC&lt;2: 同等支持; 2~10: 有证据; &gt;10: 强支持最优。比较限于相同给药途径和数据。</div>
+  <div class="tw"><div class="ts"><table class="pt"><thead><tr>
+    <th>#</th><th>模型</th><th>权重</th><th>R²</th><th>RMSE</th><th>WSSE</th><th>AIC</th><th>BIC</th><th>ΔAIC</th><th>优选</th>
+  </tr></thead><tbody>`;
+  H.forEach((m,i)=>{
+    const best=m.aic===minAIC;
+    html+=`<tr${best?' class="hl"':''}><td>${i+1}</td><td>${m.label}</td><td>${m.wt}</td>
+      <td>${m.r2.toFixed(4)}</td><td>${m.rmse.toFixed(4)}</td><td>${m.wsse.toFixed(3)}</td>
+      <td>${m.aic.toFixed(2)}</td><td>${m.bic.toFixed(2)}</td>
+      <td>${(m.aic-minAIC).toFixed(2)}</td>
+      <td>${best?'<span class="badge b-ok">✓ 最优</span>':''}</td></tr>`;
   });
-  html+=`</tbody></table></div>
-  <div class="info-box" style="margin-top:10px;font-size:10px">AIC = n·ln(WSSE/n) + 2p · BIC = n·ln(WSSE/n) + p·ln(n) · ΔAIC < 2: 同等支持；2~10: 一定证据；>10: 强支持最优</div>`;
-  document.getElementById('ca-compare-wrap').innerHTML=html;
+  html+='</tbody></table></div></div>';
+  document.getElementById('ca-cmp-wrap').innerHTML=html;
 }
 
-// ──────────────────────────────────────────
-// SIMULATION ENGINE
-// ──────────────────────────────────────────
-function updateSimModel(){
-  const route=document.getElementById('sim-route').value;
-  const nc=+document.getElementById('sim-ncomp').value;
-  document.getElementById('sim-tinf-wrap').style.display=route==='iv-inf'?'flex':'none';
-  // Disable 3-cpt for EV (we support it actually, let it be)
-  renderSimParams(route,nc);
-}
-
-function renderSimParams(route,nc){
-  const defs=SIM_PARAM_DEFS[route]?.[nc]||[];
+// ═══════════════════════════════════════════════════════════
+// SIMULATION
+// ═══════════════════════════════════════════════════════════
+const SIM_DEFS={
+  'iv-bolus':{
+    1:[{id:'k10',l:'k10 (h⁻¹)',d:.15,mn:.001,mx:5,s:.001},{id:'V1',l:'V1 (L)',d:30,mn:.1,mx:500,s:.5}],
+    2:[{id:'k10',l:'k10',d:.2,mn:.001,mx:5,s:.001},{id:'k12',l:'k12',d:.4,mn:.001,mx:5,s:.001},{id:'k21',l:'k21',d:.12,mn:.001,mx:5,s:.001},{id:'V1',l:'V1 (L)',d:20,mn:.1,mx:500,s:.5}],
+    3:[{id:'k10',l:'k10',d:.2,mn:.001,mx:5,s:.001},{id:'k12',l:'k12',d:.5,mn:.001,mx:5,s:.001},{id:'k21',l:'k21',d:.2,mn:.001,mx:5,s:.001},{id:'k13',l:'k13',d:.1,mn:.001,mx:5,s:.001},{id:'k31',l:'k31',d:.04,mn:.001,mx:5,s:.001},{id:'V1',l:'V1 (L)',d:10,mn:.1,mx:500,s:.5}]
+  },
+  'iv-inf':{
+    1:[{id:'k10',l:'k10 (h⁻¹)',d:.15,mn:.001,mx:5,s:.001},{id:'V1',l:'V1 (L)',d:30,mn:.1,mx:500,s:.5}],
+    2:[{id:'k10',l:'k10',d:.2,mn:.001,mx:5,s:.001},{id:'k12',l:'k12',d:.4,mn:.001,mx:5,s:.001},{id:'k21',l:'k21',d:.12,mn:.001,mx:5,s:.001},{id:'V1',l:'V1 (L)',d:20,mn:.1,mx:500,s:.5}],
+    3:[{id:'k10',l:'k10',d:.2,mn:.001,mx:5,s:.001},{id:'k12',l:'k12',d:.5,mn:.001,mx:5,s:.001},{id:'k21',l:'k21',d:.2,mn:.001,mx:5,s:.001},{id:'k13',l:'k13',d:.1,mn:.001,mx:5,s:.001},{id:'k31',l:'k31',d:.04,mn:.001,mx:5,s:.001},{id:'V1',l:'V1 (L)',d:10,mn:.1,mx:500,s:.5}]
+  },
+  'ev':{
+    1:[{id:'ka',l:'Ka (h⁻¹)',d:1.5,mn:.01,mx:20,s:.01},{id:'k10',l:'k10 (h⁻¹)',d:.15,mn:.001,mx:5,s:.001},{id:'V1',l:'Vd/F (L)',d:30,mn:.1,mx:500,s:.5}],
+    2:[{id:'ka',l:'Ka',d:1.5,mn:.01,mx:20,s:.01},{id:'k10',l:'k10',d:.2,mn:.001,mx:5,s:.001},{id:'k12',l:'k12',d:.4,mn:.001,mx:5,s:.001},{id:'k21',l:'k21',d:.12,mn:.001,mx:5,s:.001},{id:'V1',l:'V1/F (L)',d:20,mn:.1,mx:500,s:.5}],
+    3:[{id:'ka',l:'Ka',d:1.5,mn:.01,mx:20,s:.01},{id:'k10',l:'k10',d:.2,mn:.001,mx:5,s:.001},{id:'k12',l:'k12',d:.5,mn:.001,mx:5,s:.001},{id:'k21',l:'k21',d:.2,mn:.001,mx:5,s:.001},{id:'k13',l:'k13',d:.1,mn:.001,mx:5,s:.001},{id:'k31',l:'k31',d:.04,mn:.001,mx:5,s:.001},{id:'V1',l:'V1/F (L)',d:10,mn:.1,mx:500,s:.5}]
+  }
+};
+function updateSim(){
+  const r=document.getElementById('sim-route').value;
+  const nc=+document.getElementById('sim-nc').value;
+  document.getElementById('sw-tinf').style.display=r==='iv-inf'?'flex':'none';
+  const defs=SIM_DEFS[r]?.[nc]||[];
   let html='';
   defs.forEach(p=>{
-    html+=`<div class="slider-wrap">
-      <div class="slider-lbl"><span>${p.lbl}</span><span id="sv-${p.id}">${p.def}</span></div>
-      <input type="range" id="s-${p.id}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.def}"
-        oninput="document.getElementById('sv-${p.id}').textContent=parseFloat(this.value).toFixed(this.step<0.01?4:this.step<0.1?3:2);runSim()">
-    </div>`;
+    html+=`<div class="sw"><div class="sl"><span>${p.l}</span><span id="sv-${p.id}">${p.d}</span></div>
+      <input type="range" id="sr-${p.id}" min="${p.mn}" max="${p.mx}" step="${p.s}" value="${p.d}"
+        oninput="sv('${p.id}',this.value);runSim()"></div>`;
   });
-  document.getElementById('sim-params-panel').innerHTML=html;
+  document.getElementById('sim-pp').innerHTML=html;
 }
-
-function getSimParams(){
-  const route=document.getElementById('sim-route').value;
-  const nc=+document.getElementById('sim-ncomp').value;
-  const defs=SIM_PARAM_DEFS[route]?.[nc]||[];
-  const p={};
-  defs.forEach(def=>{
-    const el=document.getElementById('s-'+def.id);
-    p[def.id]=el?+el.value:def.def;
-  });
+function getSimP(){
+  const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
+  const defs=SIM_DEFS[r]?.[nc]||[];
+  const p={};defs.forEach(d=>{const el=document.getElementById('sr-'+d.id);p[d.id]=el?+el.value:d.d;});
   return p;
 }
-
 function runSim(){
-  const route=document.getElementById('sim-route').value;
-  const nc=+document.getElementById('sim-ncomp').value;
-  const p=getSimParams();
-  const dose=+document.getElementById('s-dose').value||100;
-  const tinf=+document.getElementById('s-tinf').value||1;
-  const nDose=+document.getElementById('s-ndose').value||1;
-  const tau=+document.getElementById('s-tau').value||24;
-  const tMax=+document.getElementById('s-tmax').value||72;
+  const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
+  const p=getSimP();
+  const dose=+document.getElementById('sr-dose').value||100;
+  const tinf=+document.getElementById('sr-tinf').value||1;
+  const nDose=+document.getElementById('sr-ndose').value||1;
+  const tau=+document.getElementById('sr-tau').value||24;
+  const tMax=+document.getElementById('sr-tmax').value||72;
   const scale=document.getElementById('sim-scale').value;
-
   const N=400;
   const tGrid=Array.from({length:N+1},(_,i)=>tMax*i/N);
-
   let concs;
-  try{
-    concs=simulateMultiDose(tGrid,p,route,nc,dose,tinf,nDose,tau);
-  }catch(e){
-    console.error('Sim error:',e);
-    concs=new Array(N+1).fill(0);
-  }
-
+  try{concs=rk4Sim(tGrid,p,r,nc,dose,tinf,nDose,tau);}
+  catch(e){concs=new Array(N+1).fill(0);}
   const cmax=Math.max(...concs);
-  const tmaxVal=tGrid[concs.indexOf(cmax)];
-  const k10=p.k10||0.15;
-  const tHalf=Math.LN2/k10;
-
-  // Estimate AUC numerically (linear trap on sim data)
-  let auc=0;
-  for(let i=0;i<N;i++) auc+=(concs[i]+concs[i+1])/2*(tGrid[i+1]-tGrid[i]);
+  const tmaxV=tGrid[concs.indexOf(cmax)];
+  const k10=p.k10||.15,V1=p.V1||30;
+  const thalf=Math.LN2/k10;
+  const auc=aucLinear(tGrid,concs);
   const clast=concs[N];
   const aucInf=auc+clast/k10;
-  const V1=p.V1||30;
   const CL=k10*V1;
-
   document.getElementById('sc-cmax').textContent=cmax.toFixed(3);
-  document.getElementById('sc-tmax').textContent=tmaxVal.toFixed(2);
-  document.getElementById('sc-thalf').textContent=tHalf.toFixed(3);
+  document.getElementById('sc-tmax').textContent=tmaxV.toFixed(2);
+  document.getElementById('sc-thalf').textContent=thalf.toFixed(3);
   document.getElementById('sc-auc').textContent=aucInf.toFixed(2);
   document.getElementById('sc-cl').textContent=CL.toFixed(3);
   document.getElementById('sc-vd').textContent=V1.toFixed(1);
-
-  const dispConcs=concs.map(c=>scale==='log'&&c<=0?null:c);
-  destroyChart('simMain');
-  S.charts['simMain']=new Chart(document.getElementById('sim-chart'),{
-    type:'line',
-    data:{datasets:[{
-      label:`浓度-时间 (${route} · ${nc}室)`,
-      data:tGrid.map((t,i)=>({x:t,y:dispConcs[i]})),
+  const dispC=concs.map(c=>scale==='log'&&c<=0?null:c);
+  dKill('simM');
+  G.charts['simM']=new Chart(document.getElementById('sim-cv'),{type:'line',
+    data:{datasets:[{label:`${r}·${nc}室`,
+      data:tGrid.map((t,i)=>({x:t,y:dispC[i]})),
       borderColor:'rgba(0,212,255,.9)',borderWidth:2.5,
-      fill:{target:'origin',above:'rgba(0,212,255,.05)'},pointRadius:0,tension:.3
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,animation:{duration:150},
+      fill:{target:'origin',above:'rgba(0,212,255,.04)'},pointRadius:0,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:100},
       scales:{
         x:{type:'linear',min:0,max:tMax,title:{display:true,text:'时间 (h)',color:'#64748b'},ticks:{color:'#64748b',maxTicksLimit:10},grid:{color:'rgba(255,255,255,.03)'}},
         y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度 (ng/mL)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-      },
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},
-        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>`浓度: ${ctx.parsed.y?ctx.parsed.y.toFixed(4):'—'} ng/mL`}}}
-    }
-  });
-
-  let pkTxt='';
-  const defs=SIM_PARAM_DEFS[route]?.[nc]||[];
-  defs.forEach(d=>{pkTxt+=`<div>${d.id}: <span style="color:var(--accent)">${(p[d.id]||0).toFixed(4)}</span></div>`;});
-  pkTxt+=`<div style="margin-top:4px;border-top:1px solid var(--border);padding-top:4px">CL: <span style="color:var(--accent3)">${CL.toFixed(3)}</span> L/h</div>`;
-  pkTxt+=`<div>t½: <span style="color:var(--accent3)">${tHalf.toFixed(3)}</span> h</div>`;
-  document.getElementById('sim-pk-summary').innerHTML=pkTxt;
+      },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},tooltip:{mode:'index',intersect:false}}}});
+  const defs=SIM_DEFS[r]?.[nc]||[];
+  let sum='';
+  defs.forEach(d=>{sum+=`<div>${d.id}: <span style="color:var(--ac)">${(p[d.id]||0).toFixed(3)}</span></div>`;});
+  sum+=`<div style="border-top:1px solid var(--bdr);padding-top:2px;margin-top:2px">t½: <span style="color:var(--ac3)">${thalf.toFixed(3)}</span> h  CL: <span style="color:var(--ac3)">${CL.toFixed(3)}</span> L/h</div>`;
+  document.getElementById('sim-sum').innerHTML=sum;
 }
-
 function resetSim(){
-  const route=document.getElementById('sim-route').value;
-  const nc=+document.getElementById('sim-ncomp').value;
-  const defs=SIM_PARAM_DEFS[route]?.[nc]||[];
-  defs.forEach(p=>{
-    const el=document.getElementById('s-'+p.id);
-    if(el){el.value=p.def;const lbl=document.getElementById('sv-'+p.id);if(lbl)lbl.textContent=p.def;}
-  });
-  document.getElementById('s-dose').value=100;document.getElementById('sv-dose').textContent=100;
-  document.getElementById('s-ndose').value=1;document.getElementById('sv-ndose').textContent=1;
-  document.getElementById('s-tau').value=24;document.getElementById('sv-tau').textContent=24;
-  document.getElementById('s-tmax').value=72;document.getElementById('sv-tmax').textContent=72;
+  const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
+  const defs=SIM_DEFS[r]?.[nc]||[];
+  defs.forEach(d=>{const el=document.getElementById('sr-'+d.id);if(el){el.value=d.d;const lv=document.getElementById('sv-'+d.id);if(lv)lv.textContent=d.d;}});
+  ['dose','ndose','tau','tmax'].forEach(k=>{const defaults={dose:100,ndose:1,tau:24,tmax:72};
+    const el=document.getElementById('sr-'+k);if(el)el.value=defaults[k];
+    const lv=document.getElementById('sv-'+k);if(lv)lv.textContent=defaults[k];});
   runSim();
 }
+// ═══════════════════════════════════════════════════════════
+// WORD REPORT DOWNLOAD
+// ═══════════════════════════════════════════════════════════
+function getImg(cvId){
+  try{const cv=document.getElementById(cvId);if(!cv)return null;return cv.toDataURL('image/png');}
+  catch(e){return null;}
+}
+function imgTag(src,w=520){
+  return src
+    ?`<div style="text-align:center;margin:10pt 0"><img src="${src}" width="${w}" style="max-width:100%"></div>`
+    :`<p style="color:#999;font-style:italic;font-size:9pt">[图表不可用，请先在分析页面运行分析]</p>`;
+}
 
-// ──────────────────────────────────────────
-// REPORT — WORD DOWNLOAD
-// ──────────────────────────────────────────
-function downloadWordReport(){
+function downloadReport(){
   const title=document.getElementById('rpt-title').value||'药代动力学分析报告';
   const drug=document.getElementById('rpt-drug').value||'未指定';
-  const analyst=document.getElementById('rpt-analyst').value||'未指定';
+  const analyst=document.getElementById('rpt-analyst').value||'—';
   const inst=document.getElementById('rpt-inst').value||'中南大学湘雅药学院';
   const date=document.getElementById('rpt-date').value||new Date().toISOString().split('T')[0];
   const incNCA=document.getElementById('rpt-nca').checked;
   const incCA=document.getElementById('rpt-ca').checked;
-  const incMethods=document.getElementById('rpt-methods').checked;
+  const incMeth=document.getElementById('rpt-methods').checked;
   const incStats=document.getElementById('rpt-stats').checked;
-  const incDisclm=document.getElementById('rpt-disclm').checked;
-
+  const incNCAimg=document.getElementById('rpt-nca-img').checked;
+  const incCAimg=document.getElementById('rpt-ca-img').checked;
+  const incDiscl=document.getElementById('rpt-discl').checked;
   const cu=document.getElementById('nca-cu')?.value||'ng/mL';
   const tu=document.getElementById('nca-tu')?.value||'h';
+  const mLbl=document.getElementById('nca-method')?.value==='linear'
+    ?'线性梯形法（Linear Trapezoidal）'
+    :'线性升-对数降法（Linear Up/Log Down）';
 
-  let ncaHtml='', caHtml='';
+  // Capture chart images
+  const ncaMainImg=incNCAimg?getImg('nca-chart-main'):null;
+  const ncaSemiImg=incNCAimg?getImg('nca-chart-semi'):null;
+  const caFitImg=incCAimg?getImg('ca-fit-cv'):null;
+  const caResImg=incCAimg?getImg('ca-res-cv'):null;
 
-  if(incNCA&&S.ncaResults){
-    const R=S.ncaResults;
-    const method=document.getElementById('nca-auc-method').value;
-    const mLbl=method==='linear'?'线性梯形法（Linear Trapezoidal）':'线性升-对数降法（Linear Up/Log Down）';
+  let ncaSec='',caSec='';
 
+  if(incNCA&&G.ncaResults){
+    const R=G.ncaResults;
     let tbody='';
-    R.forEach(r=>{
-      tbody+=`<tr>
-        <td>${r.subject}</td><td>${fmt(r.cmax,3)}</td><td>${fmt(r.tmax,2)}</td>
-        <td>${fmt(r.auc0t,2)}</td><td>${fmt(r.auc0inf,2)}</td><td>${fmt(r.aucExtrapPct,1)}</td>
-        <td>${fmt(r.lambda_z,5)}</td><td>${fmt(r.t_half,3)}</td>
-        <td>${fmt(r.r2adj_lz,4)}</td><td>${fmt(r.cl_f,4)}</td><td>${fmt(r.vd_f,3)}</td>
-        <td>${fmt(r.mrt,3)}</td>
-      </tr>`;
-    });
-
-    let statHtml='';
+    R.forEach(r=>{tbody+=`<tr>
+      <td>${r.subj}</td><td>${fmt(r.cmax,3)}</td><td>${fmt(r.tmax,2)}</td>
+      <td>${fmt(r.auc0t,2)}</td><td>${fmt(r.auc0inf,2)}</td><td>${fmt(r.pctExtrap,1)}</td>
+      <td>${fmt(r.lambda_z,5)}</td><td>${fmt(r.t_half,3)}</td><td>${fmt(r.r2adj_lz,4)}</td>
+      <td>${fmt(r.cl_f,4)}</td><td>${fmt(r.vd_f,3)}</td><td>${fmt(r.mrt,3)}</td>
+    </tr>`;});
+    let statSec='';
     if(incStats&&R.length>1){
-      const cols=['cmax','tmax','auc0t','auc0inf','lambda_z','t_half','cl_f','vd_f'];
-      const getS=(col)=>{
-        const v=R.map(r=>r[col]).filter(x=>x!==null&&!isNaN(x));
-        if(!v.length) return{mean:'—',sd:'—',cv:'—'};
+      function sr(k,l){
+        const v=R.map(r=>r[k]).filter(x=>x!==null&&!isNaN(x)&&isFinite(x));
+        if(!v.length) return`<tr><td>${l}</td><td>—</td><td>—</td><td>—</td></tr>`;
         const n=v.length,mean=v.reduce((a,b)=>a+b)/n;
         const sd=n>1?Math.sqrt(v.reduce((s,x)=>s+(x-mean)**2,0)/(n-1)):0;
-        return{mean:mean.toFixed(3),sd:sd.toFixed(3),cv:mean?((sd/mean*100).toFixed(1)+'%'):'—'};
-      };
-      statHtml=`<h3>3.2 描述性统计（均值 ± SD，CV%）</h3>
+        return`<tr><td>${l}</td><td>${mean.toFixed(3)}</td><td>${sd.toFixed(3)}</td><td>${mean?(sd/mean*100).toFixed(1)+'%':'—'}</td></tr>`;
+      }
+      statSec=`<h3>3.2 描述性统计（均值 ± SD，CV%）</h3>
       <table><thead><tr><th>参数</th><th>均值</th><th>SD</th><th>CV%</th></tr></thead><tbody>
-      ${[{k:'cmax',l:`Cmax (${cu})`},{k:'tmax',l:`Tmax (${tu})`},{k:'auc0t',l:`AUC₀₋t (${cu}·${tu})`},{k:'auc0inf',l:`AUC₀₋∞ (${cu}·${tu})`},{k:'t_half',l:`t½ (${tu})`},{k:'lambda_z',l:`λz (${tu}⁻¹)`},{k:'cl_f',l:'CL/F'},{k:'vd_f',l:'Vd/F (L)'}].map(({k,l})=>{const s=getS(k);return`<tr><td>${l}</td><td>${s.mean}</td><td>${s.sd}</td><td>${s.cv}</td></tr>`;}).join('')}
+        ${sr('cmax',`Cmax (${cu})`)}${sr('tmax',`Tmax (${tu})`)}
+        ${sr('auc0t','AUC₀₋t')}${sr('auc0inf','AUC₀₋∞')}
+        ${sr('t_half','t½')}${sr('lambda_z','λz')}
+        ${sr('cl_f','CL/F')}${sr('vd_f','Vd/F (L)')}
       </tbody></table>`;
     }
-
-    ncaHtml=`<h2>三、非房室模型（NCA）分析结果</h2>
-    <h3>3.1 个体药动学参数</h3>
-    <p><b>AUC计算方法：</b>${mLbl}</p>
-    <table><thead><tr>
-      <th>受试者</th><th>Cmax<br>(${cu})</th><th>Tmax<br>(${tu})</th>
-      <th>AUC₀₋t<br>(${cu}·${tu})</th><th>AUC₀₋∞<br>(${cu}·${tu})</th>
-      <th>AUC外推%</th><th>λz (${tu}⁻¹)</th><th>t½ (${tu})</th>
-      <th>adj.R²(λz)</th><th>CL/F</th><th>Vd/F (L)</th><th>MRT (${tu})</th>
-    </tr></thead><tbody>${tbody}</tbody></table>
-    ${statHtml}`;
+    ncaSec=`<h2>三、非房室模型（NCA）分析结果</h2>
+      <p><b>AUC计算方法：</b>${mLbl}</p>
+      <p><b>λz选取规则：</b>末端对数线性回归，自动枚举Cmax之后≥3个正浓度点的所有组合，选调整R²最大的组合。</p>
+      <p><b>AUC₀₋t计算范围：</b>从t=0至最后一个正浓度Clast（与WinNonlin规则一致）。</p>
+      <h3>3.1 个体NCA参数</h3>
+      <table><thead><tr>
+        <th>受试者</th><th>Cmax<br>(${cu})</th><th>Tmax<br>(${tu})</th>
+        <th>AUC₀₋t</th><th>AUC₀₋∞</th><th>外推%</th>
+        <th>λz (${tu}⁻¹)</th><th>t½ (${tu})</th><th>adj.R²(λz)</th>
+        <th>CL/F</th><th>Vd/F</th><th>MRT</th>
+      </tr></thead><tbody>${tbody}</tbody></table>
+      ${statSec}
+      ${incNCAimg?`<h3>3.3 浓度-时间图（线性坐标）</h3>${imgTag(ncaMainImg)}<h3>3.4 浓度-时间图（半对数坐标）</h3>${imgTag(ncaSemiImg)}`:''}`;
   }
 
-  if(incCA&&S.caResults){
-    const {fit,def,weightMode}=S.caResults;
-    caHtml=`<h2>四、房室模型分析结果</h2>
-    <p><b>模型：</b>${def.label}</p>
-    <p><b>拟合算法：</b>Levenberg-Marquardt 非线性最小二乘法</p>
-    <p><b>残差权重：</b>${document.getElementById('ca-weight').options[document.getElementById('ca-weight').selectedIndex].text}</p>
-    <table><thead><tr><th>参数</th><th>估计值</th><th>单位</th></tr></thead><tbody>
-      ${def.params.map(pp=>`<tr><td>${pp.id}</td><td>${fit.params[pp.id]?fit.params[pp.id].toFixed(6):'—'}</td><td>${{ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'}[pp.id]||'—'}</td></tr>`).join('')}
-    </tbody></table>
-    <p><b>R²</b> = ${fit.r2.toFixed(4)} &nbsp;&nbsp; <b>AIC</b> = ${fit.aic.toFixed(2)} &nbsp;&nbsp; <b>BIC</b> = ${fit.bic.toFixed(2)} &nbsp;&nbsp; <b>RMSE</b> = ${fit.rmse.toFixed(4)}</p>`;
+  if(incCA&&G.caResult){
+    const{fit,def,dose,tinf,data}=G.caResult;
+    const nca=caFittedNCA(data,fit,def,dose,tinf);
+    const unitMap={ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'};
+    caSec=`<h2>四、房室模型分析结果</h2>
+      <p><b>模型：</b>${def.label} &nbsp; <b>权重：</b>${G.caResult.wt} &nbsp; <b>算法：</b>Levenberg-Marquardt NLS</p>
+      <h3>4.1 拟合统计</h3>
+      <p>R² = ${fit.r2.toFixed(4)} &nbsp; AIC = ${fit.aic.toFixed(2)} &nbsp; BIC = ${fit.bic.toFixed(2)} &nbsp; RMSE = ${fit.rmse.toFixed(4)}</p>
+      <h3>4.2 拟合参数</h3>
+      <table><thead><tr><th>参数</th><th>估计值</th><th>单位</th></tr></thead><tbody>
+        ${def.params.map(pp=>`<tr><td>${pp.id}</td><td>${fit.params[pp.id]?fit.params[pp.id].toFixed(6):'—'}</td><td>${unitMap[pp.id]||'—'}</td></tr>`).join('')}
+      </tbody></table>
+      <h3>4.3 模型衍生PK参数（基于拟合曲线）</h3>
+      ${nca?`<table><thead><tr><th>参数</th><th>数值</th><th>单位</th></tr></thead><tbody>
+        <tr><td>Cmax（拟合）</td><td>${fmt(nca.cmax,3)}</td><td>${cu}</td></tr>
+        <tr><td>Tmax（拟合）</td><td>${fmt(nca.tmax,2)}</td><td>${tu}</td></tr>
+        <tr><td>AUC₀₋t（拟合）</td><td>${fmt(nca.auc0t,2)}</td><td>${cu}·${tu}</td></tr>
+        <tr><td>AUC₀₋∞（拟合）</td><td>${fmt(nca.auc0inf,2)}</td><td>${cu}·${tu}</td></tr>
+        <tr><td>t½</td><td>${fmt(nca.t_half,3)}</td><td>${tu}</td></tr>
+        <tr><td>CL/F</td><td>${fmt(nca.cl,3)}</td><td>L/${tu}</td></tr>
+      </tbody></table>`:'<p>NCA参数不可用</p>'}
+      ${incCAimg?`<h3>4.4 拟合曲线</h3>${imgTag(caFitImg)}<h3>4.5 加权残差 vs 时间</h3>${imgTag(caResImg,440)}`:''}`;
   }
 
-  const methodsHtml=incMethods?`
-  <h2>二、分析方法</h2>
-  <h3>2.1 非房室分析（NCA）</h3>
-  <p>采用非房室方法计算药代动力学参数。AUC采用${document.getElementById('nca-auc-method')?.options[document.getElementById('nca-auc-method')?.selectedIndex]?.text||'梯形法'}计算。</p>
-  <p><b>线性梯形法：</b>AUC[i] = (C[i] + C[i+1]) / 2 × ΔT（全程适用）</p>
-  <p><b>线性升-对数降法：</b>上升段用线性梯形法，下降段（C[i+1] &lt; C[i]）用对数梯形法</p>
-  <p>末端消除率常数（λz）：采用末端对数-线性回归，自动选取使调整R²最大的终末点集（≥3个时间点，位于Cmax之后）。</p>
-  <p>AUC₀₋∞ = AUC₀₋t + C_last / λz，t½ = ln(2) / λz</p>
-  <h3>2.2 房室模型分析</h3>
-  <p>采用RK4数值积分法求解ODE房室模型方程，Levenberg-Marquardt算法最小化加权残差平方和进行参数估计。模型选择基于AIC准则（最小AIC为最优）。</p>`:'';
+  const methSec=incMeth?`<h2>二、分析方法</h2>
+    <h3>2.1 非房室分析（NCA）</h3>
+    <p>采用${mLbl}计算AUC₀₋t，计算范围为t=0至最后一个可测浓度Clast。末端消除速率常数（λz）通过末端对数线性回归确定，自动枚举Cmax之后所有≥3个连续正浓度时间点的组合，选择调整R²最大者。AUC₀₋∞ = AUC₀₋t + Clast/λz；t½ = ln2/λz。</p>
+    <h3>2.2 房室模型分析</h3>
+    <p>采用4阶Runge-Kutta法（RK4）数值积分求解线性ODE系统，Levenberg-Marquardt算法最小化加权残差平方和（WSSE = Σwᵢ(Cobs−Cpred)²）进行参数估计。模型选择基于AIC准则（最小AIC为优选）。</p>`:'';
 
-  const disclmHtml=incDisclm?`<h2>五、免责声明</h2>
-  <div class="disclaimer"><p>本报告由PharmCloud PK药动学分析平台（中南大学湘雅药学院）生成，所有计算结果仅供学术研究参考。本平台尚未经过GxP验证，计算结果不可直接用于临床决策、药物注册申报或任何监管文件。用于上述用途时，请使用经过适当验证的专业软件，并在合格专业人员监督下进行。</p></div>`:'';
+  const disclaimSec=incDiscl?`<h2>五、免责声明</h2>
+    <div class="discl"><p>本报告由PharmCloud PK平台（中南大学湘雅药学院）生成，计算结果仅供学术研究参考，不可替代经GxP验证的专业软件，不用于临床决策或法规申报。</p></div>`:'';
 
   const wordHTML=`<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<title>${title}</title>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word" lang="zh-CN">
+<head><meta charset="UTF-8"><title>${title}</title>
 <style>
-  body{font-family:'仿宋',FangSong,Arial,sans-serif;font-size:12pt;max-width:750pt;margin:0 auto;padding:40pt;color:#1a1a1a;line-height:1.8}
-  h1{font-size:18pt;font-weight:bold;text-align:center;color:#1a3a6b;margin-bottom:6pt;font-family:'宋体',SimSun,Arial,sans-serif}
-  h2{font-size:14pt;font-weight:bold;color:#1a3a6b;margin-top:20pt;margin-bottom:8pt;border-bottom:1.5pt solid #1a3a6b;padding-bottom:3pt;font-family:'黑体',SimHei,Arial,sans-serif}
-  h3{font-size:12pt;font-weight:bold;color:#2d5a9e;margin-top:12pt;margin-bottom:6pt}
-  table{width:100%;border-collapse:collapse;margin:10pt 0;font-size:10pt}
-  th{background:#1a3a6b;color:#ffffff;padding:6pt 8pt;text-align:center;font-weight:bold;font-family:'黑体',SimHei,Arial}
-  td{padding:5pt 8pt;border:0.5pt solid #999;text-align:center;font-family:Arial,'仿宋',FangSong}
+  body{font-family:'仿宋',FangSong,Arial,sans-serif;font-size:12pt;
+    max-width:720pt;margin:0 auto;padding:36pt;color:#111;line-height:1.85}
+  h1{font-size:18pt;font-weight:bold;text-align:center;color:#1a3a6b;
+    margin-bottom:6pt;font-family:'黑体',SimHei,Arial}
+  h2{font-size:14pt;font-weight:bold;color:#1a3a6b;margin-top:20pt;margin-bottom:7pt;
+    border-bottom:1.5pt solid #1a3a6b;padding-bottom:2pt;font-family:'黑体',SimHei,Arial}
+  h3{font-size:12pt;font-weight:bold;color:#2d5a9e;margin-top:11pt;margin-bottom:5pt}
+  table{width:100%;border-collapse:collapse;margin:7pt 0;font-size:10pt}
+  th{background:#1a3a6b;color:#fff;padding:5pt 6pt;text-align:center;font-family:'黑体',SimHei,Arial}
+  td{padding:4pt 6pt;border:0.5pt solid #aaa;text-align:center}
   tr:nth-child(even) td{background:#f0f4fa}
-  .info-table td{text-align:left;border:none;background:transparent}
-  .cover{text-align:center;padding:60pt 0;border-bottom:2pt solid #1a3a6b;margin-bottom:20pt}
-  .inst{font-size:13pt;color:#444;margin-top:8pt;font-family:'宋体',SimSun}
-  .meta{font-size:11pt;color:#555;margin-top:20pt;line-height:2.2}
-  .disclaimer{background:#fff8e1;border-left:4pt solid #f59e0b;padding:10pt 14pt;font-size:10pt;color:#555;margin:10pt 0}
-  p{margin:6pt 0}
+  .cover{text-align:center;padding:48pt 0 26pt;border-bottom:2pt solid #1a3a6b;margin-bottom:16pt}
+  .discl{background:#fff8e1;border-left:3pt solid #f59e0b;padding:8pt 12pt;font-size:10pt;color:#666}
+  img{max-width:100%}
+  p{margin:5pt 0}
   @page{margin:72pt}
-</style>
-</head>
+</style></head>
 <body>
 <div class="cover">
   <h1>${title}</h1>
-  <div class="inst">中南大学湘雅药学院<br>PharmCloud PK 药动学分析平台</div>
-  <div class="meta">
-    药物名称：${drug}<br>
-    分析人员：${analyst}<br>
-    研究机构：${inst}<br>
-    报告日期：${date}
-  </div>
+  <p style="font-size:13pt;color:#333;margin-top:8pt">中南大学湘雅药学院 · PharmCloud PK v3.0</p>
+  <p style="font-size:11pt;color:#555;margin-top:12pt;line-height:2.2">
+    药物名称：${drug} &nbsp;&nbsp; 分析人员：${analyst}<br>
+    研究机构：${inst} &nbsp;&nbsp; 报告日期：${date}
+  </p>
 </div>
 <h2>一、研究概述</h2>
-<table class="info-table">
-  <tr><td style="width:120pt"><b>药物名称：</b></td><td>${drug}</td><td style="width:120pt"><b>分析人员：</b></td><td>${analyst}</td></tr>
-  <tr><td><b>研究机构：</b></td><td>${inst}</td><td><b>报告日期：</b></td><td>${date}</td></tr>
-  <tr><td><b>分析平台：</b></td><td>PharmCloud PK</td><td><b>开发单位：</b></td><td>中南大学湘雅药学院</td></tr>
-  <tr><td><b>受试者数：</b></td><td>${S.ncaResults?S.ncaResults.length:'—'}</td><td><b>给药方案：</b></td><td>${document.getElementById('nca-route')?.options[document.getElementById('nca-route')?.selectedIndex]?.text||'—'}</td></tr>
-</table>
-${methodsHtml}
-${ncaHtml}
-${caHtml}
-${disclmHtml}
+<table><tbody>
+  <tr><td style="text-align:left;width:28%"><b>药物名称</b></td><td style="text-align:left">${drug}</td>
+      <td style="text-align:left;width:28%"><b>分析人员</b></td><td style="text-align:left">${analyst}</td></tr>
+  <tr><td style="text-align:left"><b>研究机构</b></td><td style="text-align:left">${inst}</td>
+      <td style="text-align:left"><b>报告日期</b></td><td style="text-align:left">${date}</td></tr>
+  <tr><td style="text-align:left"><b>受试者数</b></td><td style="text-align:left">${G.ncaResults?G.ncaResults.length:'—'}</td>
+      <td style="text-align:left"><b>分析平台</b></td><td style="text-align:left">PharmCloud PK v3.0</td></tr>
+</tbody></table>
+${methSec}${ncaSec}${caSec}${disclaimSec}
 </body></html>`;
 
-  const blob=new Blob(['\ufeff'+wordHTML],{type:'application/vnd.ms-word;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=`PK_Report_${date||'report'}.doc`; a.click();
-  URL.revokeObjectURL(url);
+  dlText('\ufeff'+wordHTML,`PK_Report_${date}.doc`,'application/vnd.ms-word;charset=utf-8');
   notify('Word报告已下载','ok');
-
-  // Update preview
-  document.getElementById('report-preview').innerHTML=`
-    <div style="color:var(--text)">
-      <div style="font-family:var(--display);font-size:14px;margin-bottom:10px">${title}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--muted);margin-bottom:10px">
-        <div>药物：${drug}</div><div>分析人：${analyst}</div>
-        <div>日期：${date}</div><div>受试者：${S.ncaResults?S.ncaResults.length:0}人</div>
-      </div>
-      <span class="badge badge-ok">✓ Word文档已下载至本地</span>
-    </div>`;
+  document.getElementById('rpt-prev').innerHTML=`<div style="color:var(--txt)">
+    <div style="font-family:var(--disp);font-size:12px;margin-bottom:7px">${title}</div>
+    <div style="font-size:10px;color:var(--mu);margin-bottom:7px">
+      药物：${drug} · 分析人：${analyst} · 日期：${date} · 受试者：${G.ncaResults?G.ncaResults.length:0}人
+    </div>
+    <span class="badge b-ok">✓ Word文档已下载</span>
+    ${incNCAimg&&ncaMainImg?'<span class="badge b-info" style="margin-left:5px">✓ 含NCA图</span>':''}
+    ${incCAimg&&caFitImg?'<span class="badge b-info" style="margin-left:5px">✓ 含CA拟合图</span>':''}
+  </div>`;
 }
 
-function exportNCACSV(){
-  if(!S.ncaResults){notify('请先运行NCA分析','warn');return;}
-  const headers=['Subject','Cmax','Tmax','AUC0t','AUC0inf','AUCextrap_pct','lambda_z','t_half','R2_lz','adjR2_lz','CL_F','Vd_F','MRT','Clast','Tlast'];
-  const rows=S.ncaResults.map(r=>[
-    r.subject,fmt(r.cmax,4),fmt(r.tmax,4),fmt(r.auc0t,4),fmt(r.auc0inf,4),
-    fmt(r.aucExtrapPct,2),fmt(r.lambda_z,6),fmt(r.t_half,4),fmt(r.r2_lz,6),fmt(r.r2adj_lz,6),
-    fmt(r.cl_f,4),fmt(r.vd_f,4),fmt(r.mrt,4),fmt(r.clast,4),fmt(r.tlast,4)
-  ]);
-  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='NCA_Parameters.csv'; a.click();
-  notify('NCA参数CSV已导出','ok');
-}
-
-// ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // INIT
-// ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('rpt-date').value=new Date().toISOString().split('T')[0];
-  // Init CA model
   updateCAModel();
-  // Init sim
-  updateSimModel();
-  runSim();
-  // Modal close on overlay click
-  document.querySelectorAll('.modal-overlay').forEach(el=>{
+  updateSim();runSim();
+  document.querySelectorAll('.mo').forEach(el=>{
     el.addEventListener('click',e=>{if(e.target===el) el.classList.remove('show');});
   });
   notify('欢迎使用 PharmCloud PK — 中南大学湘雅药学院','info');
 });
 </script>
+</div><!-- /app -->
 </body>
 </html>
