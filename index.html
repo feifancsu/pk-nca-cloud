@@ -523,16 +523,17 @@ input[type=range]{width:100%;accent-color:var(--ac)}
       </div>
       <div class="ca">
         <div id="ca-tab-fit" class="itc active">
-          <div class="cw">
-            <div class="ct">观测值 vs 拟合曲线
-              <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="ca-yscale" onchange="reRenderCAFit()">
-                <option value="linear">线性坐标</option>
-                <option value="log">半对数坐标</option>
-              </select>
-            </div>
-            <div style="height:270px;position:relative"><canvas id="ca-fit-cv"></canvas></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:12px;font-weight:600">观测值 vs 拟合曲线</span>
+            <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="ca-yscale" onchange="reRenderCAFit()">
+              <option value="linear">线性坐标</option>
+              <option value="log">半对数坐标</option>
+            </select>
           </div>
-          <div id="ca-fit-sum" style="margin-top:10px;color:var(--mu);text-align:center;padding:10px">请先运行拟合</div>
+          <div id="ca-fit-container">
+            <div style="color:var(--mu);text-align:center;padding:36px">请先运行拟合</div>
+          </div>
+          <div id="ca-fit-sum" style="margin-top:8px"></div>
         </div>
         <div id="ca-tab-params" class="itc">
           <div id="ca-params-wrap" style="color:var(--mu);text-align:center;padding:36px">请先运行分析</div>
@@ -647,7 +648,7 @@ input[type=range]{width:100%;accent-color:var(--ac)}
       </div>
     </div>
     <div style="display:flex;gap:9px;margin-bottom:16px">
-      <button class="btn btn-ok" style="flex:1;justify-content:center;padding:10px" onclick="downloadReport()">📝 下载Word文档 (.doc)</button>
+      <button class="btn btn-ok" style="flex:1;justify-content:center;padding:10px" onclick="ensureNCAChartsRendered(downloadReport)">📝 下载Word文档 (.doc)</button>
       <button class="btn btn-g" style="flex:1;justify-content:center;padding:10px" onclick="exportNCACSV()">📊 导出NCA参数 CSV</button>
     </div>
     <div class="sbh" style="margin-bottom:6px">报告预览</div>
@@ -671,6 +672,7 @@ input[type=range]{width:100%;accent-color:var(--ac)}
   </div>
 </div>
 <div class="nc" id="nc-box"></div>
+<div id="offscreen-pool" style="position:absolute;left:-9999px;top:-9999px;width:600px;height:300px;pointer-events:none"></div>
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════════
@@ -1641,6 +1643,8 @@ function runCA(wtOverride){
         params:r.fit.params,def,dose,tinf,data:r.data,subj:r.subj});});
       renderCAFit();renderCAParams();renderCADiag();renderCACmp();renderCABatchTable();
       caTab('fit');
+      // Pre-render offscreen fit+residual images for each subject (for Word report)
+      setTimeout(()=>preRenderBatchImages(results,def,dose,tinf,wt),600);
       notify(`全部拟合完成：${subs.length}名受试者`,'ok');
       return;
     }
@@ -1720,40 +1724,112 @@ function caFittedNCA(data,fit,def,dose,tinf){
   return{cmax,tmax,auc0t,auc0inf,t_half,lambda_z,cl,vd};
 }
 
-function renderCAFit(){
-  if(!G.caResult) return;
-  const{fit,data,def,dose,tinf}=G.caResult;
+// ── Helper: render one subject's fit chart into a given canvas element ──
+function renderOneFitChart(canvasEl, data, fit, def, dose, tinf, caScale, label){
   const tMax=Math.max(...data.map(d=>d.t));
   const tGrid=Array.from({length:201},(_,i)=>tMax*1.05*i/200);
   let fConcs;
   try{fConcs=rk4Sim([0,...tGrid],fit.params,def.route,def.nc,dose,tinf,1,99999).slice(1);}
   catch(e){fConcs=new Array(201).fill(0);}
-  const caScale=document.getElementById('ca-yscale')?.value||'linear';
   const obsData=data.filter(d=>caScale!=='log'||d.c>0).map(d=>({x:d.t,y:d.c}));
   const fitData=tGrid.map((t,i)=>({x:t,y:(caScale!=='log'||fConcs[i]>0)?fConcs[i]:null}));
-  dKill('caFit');
-  G.charts['caFit']=new Chart(document.getElementById('ca-fit-cv'),{type:'scatter',data:{datasets:[
-    {label:'观测值',data:obsData,backgroundColor:'rgba(0,212,255,.85)',pointRadius:6},
-    {label:'拟合曲线',data:fitData,type:'line',
-     borderColor:'rgba(245,158,11,.9)',borderWidth:2.5,pointRadius:0,tension:.3,fill:false}
-  ]},options:{responsive:true,maintainAspectRatio:false,scales:{
+  return new Chart(canvasEl,{type:'scatter',data:{datasets:[
+    {label:label?`${label} 观测值`:'观测值',data:obsData,backgroundColor:'rgba(0,212,255,.85)',pointRadius:5},
+    {label:'拟合曲线',data:fitData,type:'line',borderColor:'rgba(245,158,11,.9)',borderWidth:2.5,pointRadius:0,tension:.3,fill:false}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},scales:{
     x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
     y:{type:caScale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-  },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+  },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}});
+}
 
-  const nca=caFittedNCA(data,fit,def,dose,tinf);
+// ── Helper: render one residual chart ──
+function renderOneResChart(canvasEl, data, fit, label){
+  const wRes=data.map((d,i)=>fit.res[i]*Math.sqrt(Math.max(fit.ws[i],0)));
+  const tMax=Math.max(...data.map(d=>d.t));
+  return new Chart(canvasEl,{type:'scatter',data:{datasets:[
+    {label:label?`${label} 加权残差`:'加权残差',data:data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.7)',pointRadius:4},
+    {label:'零线',data:[{x:0,y:0},{x:tMax,y:0}],type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},scales:{
+    x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+  },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}});
+}
+
+function renderCAFit(){
+  if(!G.caResult) return;
+  const caScale=document.getElementById('ca-yscale')?.value||'linear';
   const cu=document.getElementById('nca-cu')?.value||'ng/mL';
   const tu=document.getElementById('nca-tu')?.value||'h';
-  document.getElementById('ca-fit-sum').innerHTML=`<div class="rcg">
-    <div class="rc"><div class="rl">Cmax(拟合)</div><div class="rv">${nca?fmt(nca.cmax,3):'—'}</div><div class="ru">${cu}</div></div>
-    <div class="rc"><div class="rl">Tmax(拟合)</div><div class="rv">${nca?fmt(nca.tmax,2):'—'}</div><div class="ru">${tu}</div></div>
-    <div class="rc"><div class="rl">AUC₀₋t(拟合)</div><div class="rv">${nca?fmt(nca.auc0t,2):'—'}</div><div class="ru">${cu}·${tu}</div></div>
-    <div class="rc"><div class="rl">AUC₀₋∞(拟合)</div><div class="rv">${nca?fmt(nca.auc0inf,2):'—'}</div><div class="ru">${cu}·${tu}</div></div>
-    <div class="rc"><div class="rl">R²</div><div class="rv">${fit.r2.toFixed(4)}</div></div>
-    <div class="rc"><div class="rl">RMSE</div><div class="rv">${fit.rmse.toFixed(4)}</div></div>
-    <div class="rc"><div class="rl">AIC</div><div class="rv">${fit.aic.toFixed(2)}</div></div>
-    <div class="rc"><div class="rl">模型</div><div class="rv" style="font-size:10px">${def.label}</div></div>
-  </div>`;
+  const container=document.getElementById('ca-fit-container');
+  if(!container) return;
+
+  // Kill all old fit charts
+  Object.keys(G.charts).filter(k=>k.startsWith('caFit_')).forEach(k=>{G.charts[k].destroy();delete G.charts[k];});
+
+  const batch=G.caResultBatch;
+  const hasBatch=batch&&batch.length>1;
+
+  if(hasBatch){
+    // Multi-subject: one chart card per subject, 2-column grid
+    const COLS=['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
+    let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px">';
+    batch.forEach((r,idx)=>{
+      html+=`<div class="cw">
+        <div class="ct" style="font-size:10px"><span style="color:${COLS[idx%7]};font-weight:700">${r.subj}</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--mu)">R²=${r.fit.r2.toFixed(4)} RMSE=${r.fit.rmse.toFixed(4)}</span>
+        </div>
+        <div style="height:220px;position:relative"><canvas id="caFitCV_${r.subj.replace(/[^a-z0-9]/gi,'_')}"></canvas></div>
+      </div>`;
+    });
+    html+='</div>';
+    container.innerHTML=html;
+    // Render each chart and store image
+    batch.forEach((r,idx)=>{
+      const cvId=`caFitCV_${r.subj.replace(/[^a-z0-9]/gi,'_')}`;
+      const cv=document.getElementById(cvId);
+      if(!cv) return;
+      const ch=renderOneFitChart(cv,r.data,r.fit,r.def,r.dose,r.tinf,caScale,r.subj);
+      G.charts[`caFit_${r.subj}`]=ch;
+      // Store image after next frame
+      requestAnimationFrame(()=>{r.fitImgUrl=cv.toDataURL('image/png');});
+    });
+    // Summary table
+    let sumHtml='<div class="rcg" style="margin-top:8px">';
+    batch.forEach(r=>{
+      const nca=caFittedNCA(r.data,r.fit,r.def,r.dose,r.tinf);
+      if(nca){
+        sumHtml+=`<div class="rc" style="min-width:120px">
+          <div class="rl" style="color:${['#00d4ff','#7c3aed','#10b981','#f59e0b'][batch.indexOf(r)%4]}">${r.subj}</div>
+          <div style="font-size:9px;font-family:var(--mono);line-height:1.8;color:var(--txt)">
+            Cmax: ${fmt(nca.cmax,3)}<br>AUC₀₋t: ${fmt(nca.auc0t,2)}<br>AUC₀₋∞: ${fmt(nca.auc0inf,2)}<br>t½: ${fmt(nca.t_half,3)} ${tu}<br>R²: ${r.fit.r2.toFixed(4)}
+          </div>
+        </div>`;
+      }
+    });
+    sumHtml+='</div>';
+    document.getElementById('ca-fit-sum').innerHTML=sumHtml;
+  } else {
+    // Single subject
+    const {fit,data,def,dose,tinf}=G.caResult;
+    container.innerHTML=`<div class="cw"><div style="height:260px;position:relative"><canvas id="caFitCV_single"></canvas></div></div>`;
+    const cv=document.getElementById('caFitCV_single');
+    if(cv){
+      const ch=renderOneFitChart(cv,data,fit,def,dose,tinf,caScale,null);
+      G.charts['caFit_single']=ch;
+      requestAnimationFrame(()=>{if(G.caResult) G.caResult.fitImgUrl=cv.toDataURL('image/png');});
+    }
+    const nca=caFittedNCA(data,fit,def,dose,tinf);
+    document.getElementById('ca-fit-sum').innerHTML=`<div class="rcg">
+      <div class="rc"><div class="rl">Cmax(拟合)</div><div class="rv">${nca?fmt(nca.cmax,3):'—'}</div><div class="ru">${cu}</div></div>
+      <div class="rc"><div class="rl">Tmax(拟合)</div><div class="rv">${nca?fmt(nca.tmax,2):'—'}</div><div class="ru">${tu}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋t</div><div class="rv">${nca?fmt(nca.auc0t,2):'—'}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋∞</div><div class="rv">${nca?fmt(nca.auc0inf,2):'—'}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">R²</div><div class="rv">${fit.r2.toFixed(4)}</div></div>
+      <div class="rc"><div class="rl">RMSE</div><div class="rv">${fit.rmse.toFixed(4)}</div></div>
+      <div class="rc"><div class="rl">AIC</div><div class="rv">${fit.aic.toFixed(2)}</div></div>
+      <div class="rc"><div class="rl">模型</div><div class="rv" style="font-size:10px">${def.label}</div></div>
+    </div>`;
+  }
 }
 
 function renderCAParams(){
@@ -1790,6 +1866,20 @@ function renderCAParams(){
 
 function renderCADiag(){
   if(!G.caResult) return;
+  // Also pre-render residuals for batch subjects into offscreen canvases to capture images
+  if(G.caResultBatch&&G.caResultBatch.length>1){
+    const pool=document.getElementById('offscreen-pool');
+    if(pool){
+      pool.innerHTML='';
+      G.caResultBatch.forEach((r,idx)=>{
+        const cv=document.createElement('canvas');
+        cv.width=600;cv.height=280;
+        pool.appendChild(cv);
+        const ch=renderOneResChart(cv,r.data,r.fit,null);
+        requestAnimationFrame(()=>{r.resImgUrl=cv.toDataURL('image/png');ch.destroy();});
+      });
+    }
+  }
   const{fit,data}=G.caResult;
   const wRes=data.map((d,i)=>fit.res[i]*Math.sqrt(Math.max(fit.ws[i],0)));
   dKill('caRes');
@@ -1874,6 +1964,16 @@ function renderCABatchTable(){
 function reRenderCAFit(){
   if(!G.caResult) return;
   renderCAFit();
+  // Re-capture images after scale change
+  setTimeout(()=>{
+    if(G.caResultBatch&&G.caResultBatch.length>1){
+      G.caResultBatch.forEach(r=>{
+        const cvId=`caFitCV_${r.subj.replace(/[^a-z0-9]/gi,'_')}`;
+        const cv=document.getElementById(cvId);
+        if(cv) r.fitImgUrl=cv.toDataURL('image/png');
+      });
+    }
+  },500);
 }
 
 // ── Sync units from data management to NCA page ──
@@ -1991,6 +2091,42 @@ function imgTag(src,w=520){
     :`<p style="color:#999;font-style:italic;font-size:9pt">[图表不可用，请先在分析页面运行分析]</p>`;
 }
 
+// ── Pre-render offscreen fit & residual charts for Word report ──
+function preRenderBatchImages(results, def, dose, tinf, wt){
+  const pool=document.getElementById('offscreen-pool');
+  if(!pool) return;
+  pool.innerHTML='';
+  const caScale=document.getElementById('ca-yscale')?.value||'linear';
+  results.forEach((r,idx)=>{
+    // Fit canvas
+    const cvFit=document.createElement('canvas');
+    cvFit.width=600;cvFit.height=280;pool.appendChild(cvFit);
+    const chFit=renderOneFitChart(cvFit,r.data,r.fit,r.def,r.dose,r.tinf,caScale,null);
+    // Residual canvas
+    const cvRes=document.createElement('canvas');
+    cvRes.width=600;cvRes.height=240;pool.appendChild(cvRes);
+    const chRes=renderOneResChart(cvRes,r.data,r.fit,null);
+    // Capture after chart renders
+    setTimeout(()=>{
+      try{r.fitImgUrl=cvFit.toDataURL('image/png');}catch(e){}
+      try{r.resImgUrl=cvRes.toDataURL('image/png');}catch(e){}
+      chFit.destroy();chRes.destroy();
+    },200+idx*100);
+  });
+}
+
+function ensureNCAChartsRendered(cb){
+  // Make sure λz charts are rendered (they need lambda tab to be visited)
+  if(G.ncaResults&&G.ncaResults.length>0){
+    const firstId='lzc-'+G.ncaResults[0].subj.replace(/[^a-z0-9]/gi,'_');
+    if(!document.getElementById(firstId)){
+      // render lambda tab first
+      renderNCALZ();
+    }
+  }
+  setTimeout(cb,300);
+}
+
 function downloadReport(){
   const title=document.getElementById('rpt-title').value||'药代动力学分析报告';
   const drug=document.getElementById('rpt-drug').value||'未指定';
@@ -2010,14 +2146,28 @@ function downloadReport(){
     ?'线性梯形法（Linear Trapezoidal）'
     :'线性升-对数降法（Linear Up/Log Down）';
 
-  // Capture chart images
+  // ── Shared NCA charts (all subjects together) ──
   const ncaMainImg=incNCAimg?getImg('nca-chart-main'):null;
   const ncaSemiImg=incNCAimg?getImg('nca-chart-semi'):null;
-  const caFitImg=incCAimg?getImg('ca-fit-cv'):null;
+
+  // ── Per-subject NCA λz chart images (canvases rendered in λz tab) ──
+  const ncaLZImgs=[];
+  if(incNCAimg&&G.ncaResults){
+    G.ncaResults.forEach(r=>{
+      const cid='lzc-'+r.subj.replace(/[^a-z0-9]/gi,'_');
+      const img=getImg(cid);
+      ncaLZImgs.push({subj:r.subj,img});
+    });
+  }
+
+  // ── CA charts: single or batch ──
+  const caBatch=G.caResultBatch&&G.caResultBatch.length>0?G.caResultBatch:null;
+  // For single-subject, get from DOM; for batch, use stored URLs
   const caResImg=incCAimg?getImg('ca-res-cv'):null;
 
   let ncaSec='',caSec='';
 
+  // ══════════ NCA SECTION ══════════
   if(incNCA&&G.ncaResults){
     const R=G.ncaResults;
     let tbody='';
@@ -2044,10 +2194,18 @@ function downloadReport(){
         ${sr('cl_f','CL/F')}${sr('vd_f','Vd/F (L)')}
       </tbody></table>`;
     }
+    // Per-subject λz plots section
+    let lzPlotsSec='';
+    if(incNCAimg&&ncaLZImgs.length>0){
+      lzPlotsSec='<h3>3.5 个体末端消除相（λz）拟合图</h3>';
+      ncaLZImgs.forEach(({subj,img})=>{
+        lzPlotsSec+=`<p><b>${subj}</b></p>${imgTag(img,480)}`;
+      });
+    }
     ncaSec=`<h2>三、非房室模型（NCA）分析结果</h2>
       <p><b>AUC计算方法：</b>${mLbl}</p>
       <p><b>λz选取规则：</b>末端对数线性回归，自动枚举Cmax之后≥3个正浓度点的所有组合，选调整R²最大的组合。</p>
-      <p><b>AUC₀₋t计算范围：</b>从t=0至最后一个正浓度Clast（与WinNonlin规则一致）。</p>
+      <p><b>AUC₀₋t计算范围：</b>从t=0至最后一个正浓度Clast。</p>
       <h3>3.1 个体NCA参数</h3>
       <table><thead><tr>
         <th>受试者</th><th>Cmax<br>(${cu})</th><th>Tmax<br>(${tu})</th>
@@ -2056,34 +2214,77 @@ function downloadReport(){
         <th>CL/F</th><th>Vd/F</th><th>MRT</th>
       </tr></thead><tbody>${tbody}</tbody></table>
       ${statSec}
-      ${incNCAimg?`<h3>3.3 浓度-时间图（线性坐标）</h3>${imgTag(ncaMainImg)}<h3>3.4 浓度-时间图（半对数坐标）</h3>${imgTag(ncaSemiImg)}`:''}`;
+      ${incNCAimg?`<h3>3.3 浓度-时间图（线性坐标）</h3>${imgTag(ncaMainImg)}<h3>3.4 浓度-时间图（半对数坐标）</h3>${imgTag(ncaSemiImg)}`:''}
+      ${lzPlotsSec}`;
   }
 
-  if(incCA&&G.caResult){
-    const{fit,def,dose,tinf,data}=G.caResult;
-    const nca=caFittedNCA(data,fit,def,dose,tinf);
+  // ══════════ CA SECTION ══════════
+  if(incCA&&(G.caResult||caBatch)){
+    const def=G.caResult?.def||(caBatch?caBatch[0].def:null);
+    const wt=G.caResult?.wt||(caBatch?caBatch[0].wt:'—');
     const unitMap={ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'};
-    caSec=`<h2>四、房室模型分析结果</h2>
-      <p><b>模型：</b>${def.label} &nbsp; <b>权重：</b>${G.caResult.wt} &nbsp; <b>算法：</b>Levenberg-Marquardt NLS</p>
-      <h3>4.1 拟合统计</h3>
-      <p>R² = ${fit.r2.toFixed(4)} &nbsp; AIC = ${fit.aic.toFixed(2)} &nbsp; BIC = ${fit.bic.toFixed(2)} &nbsp; RMSE = ${fit.rmse.toFixed(4)}</p>
-      <h3>4.2 拟合参数</h3>
-      <table><thead><tr><th>参数</th><th>估计值</th><th>单位</th></tr></thead><tbody>
-        ${def.params.map(pp=>`<tr><td>${pp.id}</td><td>${fit.params[pp.id]?fit.params[pp.id].toFixed(6):'—'}</td><td>${unitMap[pp.id]||'—'}</td></tr>`).join('')}
-      </tbody></table>
-      <h3>4.3 模型衍生PK参数（基于拟合曲线）</h3>
-      ${nca?`<table><thead><tr><th>参数</th><th>数值</th><th>单位</th></tr></thead><tbody>
-        <tr><td>Cmax（拟合）</td><td>${fmt(nca.cmax,3)}</td><td>${cu}</td></tr>
-        <tr><td>Tmax（拟合）</td><td>${fmt(nca.tmax,2)}</td><td>${tu}</td></tr>
-        <tr><td>AUC₀₋t（拟合）</td><td>${fmt(nca.auc0t,2)}</td><td>${cu}·${tu}</td></tr>
-        <tr><td>AUC₀₋∞（拟合）</td><td>${fmt(nca.auc0inf,2)}</td><td>${cu}·${tu}</td></tr>
-        <tr><td>t½</td><td>${fmt(nca.t_half,3)}</td><td>${tu}</td></tr>
-        <tr><td>CL/F</td><td>${fmt(nca.cl,3)}</td><td>L/${tu}</td></tr>
-      </tbody></table>`:'<p>NCA参数不可用</p>'}
-      ${incCAimg?`<h3>4.4 拟合曲线</h3>${imgTag(caFitImg)}<h3>4.5 加权残差 vs 时间</h3>${imgTag(caResImg,440)}`:''}`;
+    if(caBatch&&caBatch.length>1){
+      // ── Multi-subject batch CA ──
+      let batchRows='';
+      const pNames=def.params.map(p=>p.id);
+      caBatch.forEach(r=>{
+        const nca=caFittedNCA(r.data,r.fit,r.def,r.dose,r.tinf);
+        batchRows+=`<tr>
+          <td>${r.subj}</td><td>${r.fit.r2.toFixed(4)}</td><td>${r.fit.rmse.toFixed(4)}</td>
+          <td>${nca?fmt(nca.cmax,3):'—'}</td><td>${nca?fmt(nca.tmax,2):'—'}</td>
+          <td>${nca?fmt(nca.auc0t,2):'—'}</td><td>${nca?fmt(nca.auc0inf,2):'—'}</td>
+          <td>${nca?fmt(nca.t_half,3):'—'}</td>
+          ${pNames.map(n=>`<td>${fmt(r.fit.params[n],5)}</td>`).join('')}
+        </tr>`;
+      });
+      let indivCharts='';
+      if(incCAimg){
+        indivCharts='<h3>4.3 个体拟合曲线与残差图</h3>';
+        caBatch.forEach(r=>{
+          indivCharts+=`<p style="font-weight:bold;margin-top:10pt">${r.subj} — 拟合曲线</p>${imgTag(r.fitImgUrl||null,500)}`;
+          indivCharts+=`<p style="font-weight:bold;margin-top:6pt">${r.subj} — 加权残差</p>${imgTag(r.resImgUrl||null,500)}`;
+        });
+      }
+      caSec=`<h2>四、房室模型分析结果</h2>
+        <p><b>模型：</b>${def.label} &nbsp; <b>权重：</b>${wt} &nbsp; <b>算法：</b>Levenberg-Marquardt NLS（多起点搜索）</p>
+        <h3>4.1 个体拟合参数汇总</h3>
+        <table><thead><tr>
+          <th>受试者</th><th>R²</th><th>RMSE</th>
+          <th>Cmax(拟合)</th><th>Tmax</th><th>AUC₀₋t</th><th>AUC₀₋∞</th><th>t½</th>
+          ${pNames.map(n=>`<th>${n}</th>`).join('')}
+        </tr></thead><tbody>${batchRows}</tbody></table>
+        <h3>4.2 参数说明</h3>
+        <table><thead><tr><th>参数</th><th>单位</th><th>含义</th></tr></thead><tbody>
+          ${def.params.map(pp=>`<tr><td>${pp.id}</td><td>${unitMap[pp.id]||'—'}</td><td>${(pp.l||'').split('(')[0].trim()}</td></tr>`).join('')}
+        </tbody></table>
+        ${indivCharts}`;
+    } else if(G.caResult){
+      // ── Single subject CA ──
+      const{fit,def,dose,tinf,data}=G.caResult;
+      const nca=caFittedNCA(data,fit,def,dose,tinf);
+      const fitImgUrl=G.caResult.fitImgUrl||null;
+      caSec=`<h2>四、房室模型分析结果</h2>
+        <p><b>模型：</b>${def.label} &nbsp; <b>权重：</b>${G.caResult.wt} &nbsp; <b>算法：</b>Levenberg-Marquardt NLS</p>
+        <h3>4.1 拟合统计</h3>
+        <p>R² = ${fit.r2.toFixed(4)} &nbsp; AIC = ${fit.aic.toFixed(2)} &nbsp; BIC = ${fit.bic.toFixed(2)} &nbsp; RMSE = ${fit.rmse.toFixed(4)}</p>
+        <h3>4.2 拟合参数</h3>
+        <table><thead><tr><th>参数</th><th>估计值</th><th>单位</th></tr></thead><tbody>
+          ${def.params.map(pp=>`<tr><td>${pp.id}</td><td>${fit.params[pp.id]?fit.params[pp.id].toFixed(6):'—'}</td><td>${unitMap[pp.id]||'—'}</td></tr>`).join('')}
+        </tbody></table>
+        <h3>4.3 模型衍生PK参数（基于拟合曲线）</h3>
+        ${nca?`<table><thead><tr><th>参数</th><th>数值</th><th>单位</th></tr></thead><tbody>
+          <tr><td>Cmax（拟合）</td><td>${fmt(nca.cmax,3)}</td><td>${cu}</td></tr>
+          <tr><td>Tmax（拟合）</td><td>${fmt(nca.tmax,2)}</td><td>${tu}</td></tr>
+          <tr><td>AUC₀₋t（拟合）</td><td>${fmt(nca.auc0t,2)}</td><td>${cu}·${tu}</td></tr>
+          <tr><td>AUC₀₋∞（拟合）</td><td>${fmt(nca.auc0inf,2)}</td><td>${cu}·${tu}</td></tr>
+          <tr><td>t½</td><td>${fmt(nca.t_half,3)}</td><td>${tu}</td></tr>
+          <tr><td>CL/F</td><td>${fmt(nca.cl,3)}</td><td>L/${tu}</td></tr>
+        </tbody></table>`:'<p>NCA参数不可用</p>'}
+        ${incCAimg?`<h3>4.4 拟合曲线</h3>${imgTag(fitImgUrl,500)}<h3>4.5 加权残差 vs 时间</h3>${imgTag(caResImg,440)}`:''}`;
+    }
   }
 
-  const methSec=incMeth?`<h2>二、分析方法</h2>
+    const methSec=incMeth?`<h2>二、分析方法</h2>
     <h3>2.1 非房室分析（NCA）</h3>
     <p>采用${mLbl}计算AUC₀₋t，计算范围为t=0至最后一个可测浓度Clast。末端消除速率常数（λz）通过末端对数线性回归确定，自动枚举Cmax之后所有≥3个连续正浓度时间点的组合，选择调整R²最大者。AUC₀₋∞ = AUC₀₋t + Clast/λz；t½ = ln2/λz。</p>
     <h3>2.2 房室模型分析</h3>
@@ -2143,8 +2344,8 @@ ${methSec}${ncaSec}${caSec}${disclaimSec}
       药物：${drug} · 分析人：${analyst} · 日期：${date} · 受试者：${G.ncaResults?G.ncaResults.length:0}人
     </div>
     <span class="badge b-ok">✓ Word文档已下载</span>
-    ${incNCAimg&&ncaMainImg?'<span class="badge b-info" style="margin-left:5px">✓ 含NCA图</span>':''}
-    ${incCAimg&&caFitImg?'<span class="badge b-info" style="margin-left:5px">✓ 含CA拟合图</span>':''}
+    ${incNCAimg&&ncaMainImg?'<span class="badge b-info" style="margin-left:5px">✓ NCA图</span>':''}
+    ${(incCAimg&&(G.caResultBatch?.some(r=>r.fitImgUrl)||G.caResult?.fitImgUrl))?'<span class="badge b-info" style="margin-left:5px">✓ 含CA拟合图</span>':''}
   </div>`;
 }
 
