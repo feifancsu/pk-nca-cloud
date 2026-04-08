@@ -209,11 +209,6 @@ input[type=range]{width:100%;accent-color:var(--ac)}
 .cm-l{font-size:8px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--mu);margin-bottom:4px}
 
 @keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(0,212,255,0)}50%{box-shadow:0 0 16px rgba(0,212,255,.18)}}
-/* Slider+input combo */
-.si-row{display:grid;grid-template-columns:1fr 64px;gap:4px;align-items:center;margin-bottom:8px}
-.si-label{font-size:9px;color:var(--mu);margin-bottom:3px}
-.si-num{background:rgba(255,255,255,.07);border:1px solid var(--bdr);border-radius:5px;padding:3px 5px;color:var(--ac);font-size:11px;font-family:var(--mono);width:100%;text-align:right;outline:none}
-.si-num:focus{border-color:rgba(0,212,255,.4)}
 .pulse{animation:pulse 2.2s ease infinite}
 </style>
 </head>
@@ -350,13 +345,6 @@ input[type=range]{width:100%;accent-color:var(--ac)}
           <div id="eda-wrap" style="color:var(--mu);text-align:center;padding:36px">请先加载并映射数据</div>
         </div>
         <div id="dt-dplot" class="itc">
-          <div class="sh" style="margin-bottom:8px">
-            <h2>浓度-时间图</h2>
-            <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="dm-plot-scale" onchange="renderDataPlot()">
-              <option value="linear">线性坐标</option>
-              <option value="log">半对数坐标</option>
-            </select>
-          </div>
           <div class="cw"><div style="height:300px;position:relative"><canvas id="data-plot-cv"></canvas></div></div>
         </div>
       </div>
@@ -551,15 +539,13 @@ input[type=range]{width:100%;accent-color:var(--ac)}
           <div id="ca-params-wrap" style="color:var(--mu);text-align:center;padding:36px">请先运行分析</div>
         </div>
         <div id="ca-tab-diag" class="itc">
-          <div id="ca-diag-container">
-            <div class="cw" style="margin-bottom:10px">
-              <div class="ct">加权残差 vs 时间</div>
-              <div style="height:200px;position:relative"><canvas id="ca-res-cv"></canvas></div>
-            </div>
-            <div class="cw">
-              <div class="ct">观测值 vs 预测值 (DV vs PRED)</div>
-              <div style="height:200px;position:relative"><canvas id="ca-dv-cv"></canvas></div>
-            </div>
+          <div class="cw" style="margin-bottom:10px">
+            <div class="ct">加权残差 vs 时间</div>
+            <div style="height:200px;position:relative"><canvas id="ca-res-cv"></canvas></div>
+          </div>
+          <div class="cw">
+            <div class="ct">观测值 vs 预测值 (DV vs PRED)</div>
+            <div style="height:200px;position:relative"><canvas id="ca-dv-cv"></canvas></div>
           </div>
         </div>
         <div id="ca-tab-cmp" class="itc">
@@ -590,33 +576,17 @@ input[type=range]{width:100%;accent-color:var(--ac)}
       <div class="sbs"><div class="sbh">PK参数</div><div id="sim-pp"></div></div>
       <div class="sbs">
         <div class="sbh">给药方案</div>
-        <div class="si-label">剂量 (mg)</div>
-        <div class="si-row">
-          <input type="range" id="sr-dose" min="10" max="2000" step="10" value="100" oninput="syncSimInput('dose',this.value)">
-          <input type="number" class="si-num" id="sn-dose" value="100" min="1" step="10" oninput="syncSimSlider('dose',this.value)">
-        </div>
-        <div id="sw-tinf" style="display:none">
-          <div class="si-label">滴注时间 (h)</div>
-          <div class="si-row">
-            <input type="range" id="sr-tinf" min="0.25" max="24" step="0.25" value="1" oninput="syncSimInput('tinf',this.value)">
-            <input type="number" class="si-num" id="sn-tinf" value="1" min="0.1" step="0.25" oninput="syncSimSlider('tinf',this.value)">
-          </div>
-        </div>
-        <div class="si-label">给药次数</div>
-        <div class="si-row">
-          <input type="range" id="sr-ndose" min="1" max="10" step="1" value="1" oninput="syncSimInput('ndose',this.value)">
-          <input type="number" class="si-num" id="sn-ndose" value="1" min="1" max="20" step="1" oninput="syncSimSlider('ndose',this.value)">
-        </div>
-        <div class="si-label">给药间隔 (h)</div>
-        <div class="si-row">
-          <input type="range" id="sr-tau" min="4" max="72" step="2" value="24" oninput="syncSimInput('tau',this.value)">
-          <input type="number" class="si-num" id="sn-tau" value="24" min="1" step="1" oninput="syncSimSlider('tau',this.value)">
-        </div>
-        <div class="si-label">模拟时长 (h)</div>
-        <div class="si-row">
-          <input type="range" id="sr-tmax" min="12" max="480" step="12" value="72" oninput="syncSimInput('tmax',this.value)">
-          <input type="number" class="si-num" id="sn-tmax" value="72" min="1" step="12" oninput="syncSimSlider('tmax',this.value)">
-        </div>
+        <div class="sw"><div class="sl"><span>剂量(mg)</span><span id="sv-dose">100</span></div>
+          <input type="range" id="sr-dose" min="10" max="2000" step="10" value="100" oninput="sv('dose',this.value);runSim()"></div>
+        <div class="sw" id="sw-tinf" style="display:none">
+          <div class="sl"><span>滴注时间(h)</span><span id="sv-tinf">1</span></div>
+          <input type="range" id="sr-tinf" min="0.25" max="24" step="0.25" value="1" oninput="sv('tinf',this.value);runSim()"></div>
+        <div class="sw"><div class="sl"><span>给药次数</span><span id="sv-ndose">1</span></div>
+          <input type="range" id="sr-ndose" min="1" max="10" step="1" value="1" oninput="sv('ndose',this.value);runSim()"></div>
+        <div class="sw"><div class="sl"><span>间隔(h)</span><span id="sv-tau">24</span></div>
+          <input type="range" id="sr-tau" min="4" max="72" step="2" value="24" oninput="sv('tau',this.value);runSim()"></div>
+        <div class="sw"><div class="sl"><span>时长(h)</span><span id="sv-tmax">72</span></div>
+          <input type="range" id="sr-tmax" min="12" max="480" step="12" value="72" oninput="sv('tmax',this.value);runSim()"></div>
       </div>
       <div class="sbs"><div class="sbh">参数摘要</div>
         <div id="sim-sum" style="font-size:10px;font-family:var(--mono);line-height:2">—</div>
@@ -630,8 +600,6 @@ input[type=range]{width:100%;accent-color:var(--ac)}
           <select class="fs" style="width:auto;padding:3px 7px;font-size:10px" id="sim-scale" onchange="runSim()">
             <option value="linear">线性</option><option value="log">半对数</option>
           </select>
-          <button class="btn btn-g btn-sm" onclick="simDownloadChart()" title="下载图片">🖼 图</button>
-          <button class="btn btn-g btn-sm" onclick="simDownloadCSV()" title="下载数据CSV">📊 CSV</button>
         </div>
       </div>
       <div class="ca">
@@ -890,19 +858,18 @@ function renderEDA(data,subjects){
 }
 function renderDataPlot(){
   if(!G.data)return;
-  const scale=document.getElementById('dm-plot-scale')?.value||'linear';
   const subjects=[...new Set(G.data.map(r=>r.Subject))];
   const COLS=['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
   const datasets=subjects.map((s,i)=>{
     const rows=G.data.filter(r=>r.Subject===s).sort((a,b)=>a.Time-b.Time);
-    return{label:s,data:rows.filter(d=>scale!=='log'||d.Conc>0).map(r=>({x:r.Time,y:r.Conc})),
+    return{label:s,data:rows.map(r=>({x:r.Time,y:r.Conc})),
       borderColor:COLS[i%7],backgroundColor:COLS[i%7]+'22',pointRadius:4,tension:.3,fill:false};
   });
   dKill('dataPlot');
   G.charts['dataPlot']=new Chart(document.getElementById('data-plot-cv'),{type:'line',
     data:{datasets},options:{responsive:true,maintainAspectRatio:false,
       scales:{x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-              y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}},
+              y:{title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}},
       plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}}}});
 }
 
@@ -946,30 +913,8 @@ const DEMO=[
 ];
 function loadDemo(){
   G.data=DEMO.map(r=>({...r,Dose:100}));
-  const subs=[...new Set(G.data.map(r=>r.Subject))];
-  // Populate raw data view in data management
-  G.rawCols=['Subject','Time','Conc'];
-  G.rawRows=[['Subject','Time','Conc'],...DEMO.map(r=>[r.Subject,r.Time,r.Conc])];
-  // Show raw preview table
-  const rawHead=document.getElementById('raw-head');
-  const rawBody=document.getElementById('raw-body');
-  if(rawHead) rawHead.innerHTML='<tr>'+G.rawCols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
-  if(rawBody) rawBody.innerHTML=G.rawRows.slice(1,41).map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('');
-  // Build column map UI
-  buildColMapUI();
-  // Auto-select columns (Subject=0, Time=1, Conc=2)
-  setTimeout(()=>{
-    const cs=document.getElementById('cm-s');if(cs) cs.value='0';
-    const ct=document.getElementById('cm-t');if(ct) ct.value='1';
-    const cc=document.getElementById('cm-c');if(cc) cc.value='2';
-  },50);
-  // Update data status in data mgmt
-  const dsEl=document.getElementById('data-status');
-  if(dsEl) dsEl.textContent=`${DEMO.length}行 × 3列`;
-  // Render EDA
-  renderEDA(G.data,subs);
-  // Update NCA / CA status
   syncNCAStatus();syncCAStatus();
+  const subs=[...new Set(G.data.map(r=>r.Subject))];
   updateCASubjList(subs);
   notify('示例数据已加载（3受试者，口服给药）','ok');
 }
@@ -1887,226 +1832,74 @@ function renderCAFit(){
   }
 }
 
-function calcDerivedParams(p, def, dose, tu){
-  const k10=p.k10||0.1, V1=p.V1||10;
-  const CL=k10*V1;
-  const derived={};
-  derived['CL (L/h)']=CL;
-  derived['t½β (h)']=Math.LN2/k10;
-  if(def.route==='ev'&&p.ka){
-    derived['t½α(吸收) (h)']=Math.LN2/p.ka;
-    derived['Tmax理论 (h)']=Math.abs(p.ka-k10)>1e-5?Math.log(p.ka/k10)/(p.ka-k10):0;
-    derived['F·Vd/F (L)']=V1;
-  } else {
-    derived['Vd (L)']=V1;
-  }
-  if(def.nc===2){
-    const k12=p.k12||0,k21=p.k21||0;
-    const disc=Math.max(0,(k10+k12+k21)**2-4*k10*k21);
-    const alpha=(k10+k12+k21+Math.sqrt(disc))/2;
-    const beta=(k10+k12+k21-Math.sqrt(disc))/2;
-    derived['α (h⁻¹)']=alpha;
-    derived['β (h⁻¹)']=beta;
-    derived['t½α (h)']=Math.LN2/alpha;
-    derived['t½β (h)']=Math.LN2/beta;
-    derived['CL (L/h)']=CL;
-    const Vc=V1;
-    const Vp=Vc*(k12/k21);
-    derived['Vc (L)']=Vc;
-    derived['Vp (L)']=Vp;
-    derived['Vss (L)']=Vc+Vp;
-    if(def.route==='ev'&&p.ka) derived['F·Vd/F (L)']=dose/((alpha*beta/(CL))); // approx
-  }
-  if(def.nc===3){
-    // 3-cpt: report micro-constants only, plus estimates of macro params
-    const k12=p.k12||0,k21=p.k21||0,k13=p.k13||0,k31=p.k31||0;
-    derived['CL (L/h)']=CL;
-    derived['Vc (L)']=V1;
-    // Approximation for Vss in 3-cpt
-    derived['Vss≈ (L)']=V1*(1+k12/k21+k13/k31);
-  }
-  return derived;
-}
-
-function buildCAParamHTML(fit, def, dose, tinf, data, cu, tu, wt, showNCA){
-  const p=fit.params;
-  const pNames=def.params.map(pp=>pp.id);
-  const unitMap={ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'};
-  const descMap={ka:'吸收速率常数',k10:'一级消除速率常数',k12:'中央室→外周室1速率常数',k21:'外周室1→中央室速率常数',k13:'中央室→外周室2速率常数',k31:'外周室2→中央室速率常数',V1:'中央室（表观）分布容积'};
-  const derived=calcDerivedParams(p,def,dose,tu);
-  const nca=showNCA?caFittedNCA(data,fit,def,dose,tinf):null;
-  const mkSectionHdr=(title)=>`<div style="background:rgba(0,212,255,.06);border-left:3px solid var(--ac);padding:5px 10px;margin:10px 0 6px;font-size:11px;font-weight:700;color:var(--ac)">${title}</div>`;
-  let html='';
-  // 1. Direct fit params
-  html+=mkSectionHdr('Ⅰ 模型直接拟合参数');
-  html+=`<div class="tw" style="margin-bottom:6px"><table class="pt"><thead><tr><th>参数</th><th>估计值</th><th>单位</th><th>含义</th></tr></thead><tbody>
-    ${pNames.map(nm=>
-      `<tr class="hl"><td style="font-weight:700;font-family:var(--mono)">${nm}</td>
-      <td style="font-family:var(--mono)">${p[nm]!==undefined?p[nm].toFixed(6):'—'}</td>
-      <td>${unitMap[nm]||'—'}</td>
-      <td style="font-family:var(--sans);color:var(--mu);font-size:10px">${descMap[nm]||''}</td></tr>`
-    ).join('')}
-  </tbody></table></div>`;
-  // 2. Derived params
-  html+=mkSectionHdr('Ⅱ 模型派生参数');
-  html+=`<div class="tw" style="margin-bottom:6px"><table class="pt"><thead><tr><th>参数</th><th>数值</th><th>说明</th></tr></thead><tbody>
-    ${Object.entries(derived).map(([k,v])=>
-      `<tr><td style="font-family:var(--mono);font-weight:600">${k}</td><td style="font-family:var(--mono)">${fmt(v,4)}</td>
-      <td style="color:var(--mu);font-size:10px;font-family:var(--sans)">${{
-        'CL (L/h)':'清除率 = k10 × V1','t½β (h)':'末端消除半衰期 = ln2/k10','t½α(吸收) (h)':'吸收半衰期 = ln2/Ka','Tmax理论 (h)':'理论峰值时间',
-        'α (h⁻¹)':'快速分布指数','β (h⁻¹)':'末端消除指数','t½α (h)':'分布相半衰期','Vc (L)':'中央室容积','Vp (L)':'外周室容积','Vss (L)':'稳态分布容积',
-        'Vd (L)':'表观分布容积','F·Vd/F (L)':'表观分布容积（含生物利用度）','Vss≈ (L)':'稳态分布容积（近似）'
-      }[k]||''}</td></tr>`
-    ).join('')}
-  </tbody></table></div>`;
-  // 3. NCA-derived PK params from fitted curve
-  if(nca){
-    html+=mkSectionHdr('Ⅲ 模型诊断参数（基于拟合曲线）');
-    html+=`<div class="tw" style="margin-bottom:6px"><table class="pt"><thead><tr><th>参数</th><th>数值</th><th>单位</th></tr></thead><tbody>
-      <tr><td style="font-family:var(--mono)">Cmax</td><td style="font-family:var(--mono)">${fmt(nca.cmax,4)}</td><td>${cu}</td></tr>
-      <tr><td style="font-family:var(--mono)">Tmax</td><td style="font-family:var(--mono)">${fmt(nca.tmax,4)}</td><td>${tu}</td></tr>
-      <tr><td style="font-family:var(--mono)">AUC₀₋t</td><td style="font-family:var(--mono)">${fmt(nca.auc0t,4)}</td><td>${cu}·${tu}</td></tr>
-      <tr><td style="font-family:var(--mono)">AUC₀₋∞</td><td style="font-family:var(--mono)">${fmt(nca.auc0inf,4)}</td><td>${cu}·${tu}</td></tr>
-      <tr><td style="font-family:var(--mono)">t½ (末端)</td><td style="font-family:var(--mono)">${fmt(nca.t_half,4)}</td><td>${tu}</td></tr>
-      <tr><td style="font-family:var(--mono)">CL/F</td><td style="font-family:var(--mono)">${fmt(nca.cl,4)}</td><td>L/${tu}</td></tr>
-    </tbody></table></div>`;
-  }
-  // 4. Goodness of fit
-  html+=mkSectionHdr('Ⅳ 拟合诊断统计');
-  html+=`<div class="tw"><table class="pt"><thead><tr><th>统计量</th><th>数值</th><th>说明</th></tr></thead><tbody>
-    <tr><td>R²</td><td style="font-family:var(--mono)">${fit.r2.toFixed(6)}</td><td style="color:var(--mu)">决定系数（越接近1越好）</td></tr>
-    <tr><td>RMSE</td><td style="font-family:var(--mono)">${fit.rmse.toFixed(6)}</td><td style="color:var(--mu)">均方根误差</td></tr>
-    <tr><td>WSSE</td><td style="font-family:var(--mono)">${fit.wsse.toFixed(6)}</td><td style="color:var(--mu)">加权残差平方和</td></tr>
-    <tr><td>AIC</td><td style="font-family:var(--mono)">${fit.aic.toFixed(4)}</td><td style="color:var(--mu)">赤池信息量（模型选择）</td></tr>
-    <tr><td>BIC</td><td style="font-family:var(--mono)">${fit.bic.toFixed(4)}</td><td style="color:var(--mu)">贝叶斯信息量</td></tr>
-    <tr><td>n (数据点)</td><td style="font-family:var(--mono)">${data.length}</td><td style="color:var(--mu)">参与拟合的观测值数</td></tr>
-    <tr><td>p (参数数)</td><td style="font-family:var(--mono)">${pNames.length}</td><td style="color:var(--mu)">可估计参数数目</td></tr>
-    <tr><td>权重方案</td><td style="font-family:var(--mono)">${wt}</td><td style="color:var(--mu)">残差加权方式</td></tr>
-  </tbody></table></div>`;
-  html+=`<div class="ib" style="margin-top:8px;font-size:9px">模型：${def.label} | 算法：Levenberg-Marquardt多起点搜索 | ODE求解：RK4</div>`;
-  return html;
-}
-
 function renderCAParams(){
   if(!G.caResult) return;
   const{fit,def,dose,tinf,data}=G.caResult;
+  const p=fit.params;
+  const pNames=def.params.map(pp=>pp.id);
+  const k10=p.k10||.15,V1=p.V1||10;
   const cu=document.getElementById('nca-cu')?.value||'ng/mL';
   const tu=document.getElementById('nca-tu')?.value||'h';
-  const wt=G.caResult.wt;
-  const subj=G.caResult.subj||'';
-  const batch=G.caResultBatch;
-  const hasBatch=batch&&batch.length>1;
-  let html=`<div class="sh"><h2>${def.label} — 参数结果</h2>
-    <div style="display:flex;gap:5px;flex-wrap:wrap">
-      ${subj?`<span class="badge b-info">${subj}</span>`:''}
-      <span class="badge b-ok">权重：${wt}</span>
-      <span class="badge b-warn">R²=${fit.r2.toFixed(4)}</span>
-    </div></div>`;
-  html+=buildCAParamHTML(fit,def,dose,tinf,data,cu,tu,wt,true);
-  if(hasBatch&&batch.length>1){
-    html+=`<div style="margin-top:16px"><div class="sh"><h2>全部受试者参数汇总</h2></div>`;
-    const pNames=def.params.map(pp=>pp.id);
-    const derived0=calcDerivedParams(batch[0].fit.params,def,dose,tu);
-    const derivedKeys=Object.keys(derived0);
-    html+=`<div class="tw"><div class="ts"><table class="pt"><thead><tr>
-      <th>受试者</th><th>R²</th>${pNames.map(n=>`<th>${n}</th>`).join('')}${derivedKeys.map(k=>`<th>${k.split(' (')[0]}</th>`).join('')}
-    </tr></thead><tbody>`;
-    batch.forEach(r=>{
-      const d=calcDerivedParams(r.fit.params,r.def,r.dose,tu);
-      html+=`<tr><td style="font-weight:600">${r.subj}</td><td>${r.fit.r2.toFixed(4)}</td>
-        ${pNames.map(n=>`<td>${fmt(r.fit.params[n],5)}</td>`).join('')}
-        ${derivedKeys.map(k=>`<td>${fmt(d[k],4)}</td>`).join('')}
-      </tr>`;
-    });
-    html+='</tbody></table></div></div></div>';
-  }
-  document.getElementById('ca-params-wrap').innerHTML=html;
+  const nca=caFittedNCA(data,fit,def,dose,tinf);
+  document.getElementById('ca-params-wrap').innerHTML=`
+    <div class="sh"><h2>${def.label} — 拟合参数</h2><span class="badge b-ok">权重:${G.caResult.wt}</span></div>
+    ${nca?`<div class="rcg" style="margin-bottom:10px">
+      <div class="rc"><div class="rl">Cmax(拟合,${cu})</div><div class="rv">${fmt(nca.cmax,3)}</div></div>
+      <div class="rc"><div class="rl">Tmax(拟合,${tu})</div><div class="rv">${fmt(nca.tmax,2)}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋t</div><div class="rv">${fmt(nca.auc0t,2)}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">AUC₀₋∞</div><div class="rv">${fmt(nca.auc0inf,2)}</div><div class="ru">${cu}·${tu}</div></div>
+      <div class="rc"><div class="rl">t½(${tu})</div><div class="rv">${fmt(nca.t_half,3)}</div></div>
+      <div class="rc"><div class="rl">CL/F</div><div class="rv">${fmt(nca.cl,3)}</div><div class="ru">L/${tu}</div></div>
+    </div>`:''}
+    <div class="tw" style="margin-bottom:9px"><table class="pt"><thead><tr><th>参数</th><th>估计值</th><th>单位</th><th>说明</th></tr></thead><tbody>
+      ${pNames.map(nm=>{const pp=def.params.find(x=>x.id===nm);return`<tr class="hl">
+        <td style="font-weight:700">${nm}</td>
+        <td>${p[nm]?p[nm].toFixed(6):'—'}</td>
+        <td>${{ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'}[nm]||'—'}</td>
+        <td style="font-family:var(--sans);color:var(--mu)">${(pp?.l||'').split('(')[0].trim()}</td>
+      </tr>`;}).join('')}
+    </tbody></table></div>
+    <div class="ib" style="margin-top:8px;font-size:9px">
+      拟合：Levenberg-Marquardt | 权重：${G.caResult.wt} | RK4数值积分ODE | NCA参数基于拟合曲线计算
+    </div>`;
 }
 
 function renderCADiag(){
   if(!G.caResult) return;
-  const container=document.getElementById('ca-diag-container');
-  // Kill old diag charts
-  Object.keys(G.charts).filter(k=>k.startsWith('caDiag_')).forEach(k=>{G.charts[k].destroy();delete G.charts[k];});
-  const batch=G.caResultBatch;
-  const hasBatch=batch&&batch.length>1;
-  if(hasBatch){
-    // Multi-subject: one row (residual + DV) per subject
-    const COLS=['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
-    let html='';
-    batch.forEach((r,idx)=>{
-      const sid=r.subj.replace(/[^a-z0-9]/gi,'_');
-      html+=`<div style="margin-bottom:12px">
-        <div style="font-size:11px;font-weight:600;color:${COLS[idx%7]};margin-bottom:6px">${r.subj}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="cw"><div class="ct" style="font-size:10px">加权残差 vs 时间</div>
-            <div style="height:170px;position:relative"><canvas id="caDiagRes_${sid}"></canvas></div></div>
-          <div class="cw"><div class="ct" style="font-size:10px">观测值 vs 预测值</div>
-            <div style="height:170px;position:relative"><canvas id="caDiagDV_${sid}"></canvas></div></div>
-        </div>
-      </div>`;
-    });
-    container.innerHTML=html;
-    // Render each subject's charts
-    batch.forEach((r,idx)=>{
-      const sid=r.subj.replace(/[^a-z0-9]/gi,'_');
-      const cvRes=document.getElementById('caDiagRes_'+sid);
-      const cvDV=document.getElementById('caDiagDV_'+sid);
-      if(cvRes){
-        const wRes=r.data.map((d,i)=>r.fit.res[i]*Math.sqrt(Math.max(r.fit.ws[i],0)));
-        const tMax=Math.max(...r.data.map(d=>d.t));
-        G.charts[`caDiag_res_${sid}`]=new Chart(cvRes,{type:'scatter',data:{datasets:[
-          {label:'加权残差',data:r.data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.75)',pointRadius:4},
-          {label:'零线',data:[{x:0,y:0},{x:tMax,y:0}],type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
-        ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},scales:{
-          x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}},
-          y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}}
-        },plugins:{legend:{display:false}}}});
-      }
-      if(cvDV){
-        const mx=Math.max(...r.data.map(d=>d.c));
-        G.charts[`caDiag_dv_${sid}`]=new Chart(cvDV,{type:'scatter',data:{datasets:[
-          {label:'DV vs PRED',data:r.data.map((d,i)=>({x:r.fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:4},
-          {label:'对角线',data:[{x:0,y:0},{x:mx,y:mx}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
-        ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},scales:{
-          x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}},
-          y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}}
-        },plugins:{legend:{display:false}}}});
-      }
-      // Capture residual chart for Word report
-      requestAnimationFrame(()=>{
-        if(cvRes) try{r.resImgUrl=cvRes.toDataURL('image/png');}catch(e){}
+  // Also pre-render residuals for batch subjects into offscreen canvases to capture images
+  if(G.caResultBatch&&G.caResultBatch.length>1){
+    const pool=document.getElementById('offscreen-pool');
+    if(pool){
+      pool.innerHTML='';
+      G.caResultBatch.forEach((r,idx)=>{
+        const cv=document.createElement('canvas');
+        cv.width=600;cv.height=280;
+        pool.appendChild(cv);
+        const ch=renderOneResChart(cv,r.data,r.fit,null);
+        requestAnimationFrame(()=>{r.resImgUrl=cv.toDataURL('image/png');ch.destroy();});
       });
-    });
-  } else {
-    // Single subject: original two-chart layout
-    container.innerHTML=`<div class="cw" style="margin-bottom:10px">
-      <div class="ct">加权残差 vs 时间</div>
-      <div style="height:200px;position:relative"><canvas id="ca-res-cv"></canvas></div>
-    </div>
-    <div class="cw">
-      <div class="ct">观测值 vs 预测值 (DV vs PRED)</div>
-      <div style="height:200px;position:relative"><canvas id="ca-dv-cv"></canvas></div>
-    </div>`;
-    const{fit,data}=G.caResult;
-    const wRes=data.map((d,i)=>fit.res[i]*Math.sqrt(Math.max(fit.ws[i],0)));
-    G.charts['caDiag_res_single']=new Chart(document.getElementById('ca-res-cv'),{type:'scatter',data:{datasets:[
-      {label:'加权残差',data:data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.7)',pointRadius:5},
-      {label:'零线',data:[{x:0,y:0},{x:Math.max(...data.map(d=>d.t)),y:0}],
-       type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
-    ]},options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
-    const mx=Math.max(...data.map(d=>d.c));
-    G.charts['caDiag_dv_single']=new Chart(document.getElementById('ca-dv-cv'),{type:'scatter',data:{datasets:[
-      {label:'DV vs PRED',data:data.map((d,i)=>({x:fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:5},
-      {label:'对角线',data:[{x:0,y:0},{x:mx,y:mx}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
-    ]},options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+    }
   }
+  const{fit,data}=G.caResult;
+  const wRes=data.map((d,i)=>fit.res[i]*Math.sqrt(Math.max(fit.ws[i],0)));
+  dKill('caRes');
+  G.charts['caRes']=new Chart(document.getElementById('ca-res-cv'),{type:'scatter',data:{datasets:[
+    {label:'加权残差',data:data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.7)',pointRadius:5},
+    {label:'零线',data:[{x:0,y:0},{x:Math.max(...data.map(d=>d.t)),y:0}],
+     type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
+  ]},options:{responsive:true,maintainAspectRatio:false,scales:{
+    x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+  },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+  const mx=Math.max(...data.map(d=>d.c));
+  dKill('caDV');
+  G.charts['caDV']=new Chart(document.getElementById('ca-dv-cv'),{type:'scatter',data:{datasets:[
+    {label:'DV vs PRED',data:data.map((d,i)=>({x:fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:5},
+    {label:'对角线',data:[{x:0,y:0},{x:mx,y:mx}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
+  ]},options:{responsive:true,maintainAspectRatio:false,scales:{
+    x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
+    y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
+  },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
 }
 
 function renderCACmp(){
@@ -2218,44 +2011,26 @@ function updateSim(){
   const defs=SIM_DEFS[r]?.[nc]||[];
   let html='';
   defs.forEach(p=>{
-    html+=`<div class="si-label">${p.l}</div>
-      <div class="si-row">
-        <input type="range" id="sr-${p.id}" min="${p.mn}" max="${p.mx}" step="${p.s}" value="${p.d}"
-          oninput="syncSimInput('${p.id}',this.value)">
-        <input type="number" class="si-num" id="sn-${p.id}" value="${p.d}" min="${p.mn}" max="${p.mx}" step="${p.s}"
-          oninput="syncSimSlider('${p.id}',this.value)">
-      </div>`;
+    html+=`<div class="sw"><div class="sl"><span>${p.l}</span><span id="sv-${p.id}">${p.d}</span></div>
+      <input type="range" id="sr-${p.id}" min="${p.mn}" max="${p.mx}" step="${p.s}" value="${p.d}"
+        oninput="sv('${p.id}',this.value);runSim()"></div>`;
   });
   document.getElementById('sim-pp').innerHTML=html;
-}
-function syncSimInput(id, val){
-  const n=document.getElementById('sn-'+id);
-  if(n) n.value=parseFloat(val).toFixed(+val<0.01?4:+val<0.1?3:+val<10?3:2);
-  sv(id,val);runSim();
-}
-function syncSimSlider(id, val){
-  const s=document.getElementById('sr-'+id);
-  if(s){s.value=val;}
-  sv(id,val);runSim();
 }
 function getSimP(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
   const defs=SIM_DEFS[r]?.[nc]||[];
-  const p={};
-  defs.forEach(d=>{
-    // Prefer number input (more precise) over slider
-    const numEl=document.getElementById('sn-'+d.id);
-    const slEl=document.getElementById('sr-'+d.id);
-    const val=numEl?+numEl.value:(slEl?+slEl.value:d.d);
-    p[d.id]=isNaN(val)?d.d:Math.min(Math.max(val,d.mn),d.mx);
-  });
+  const p={};defs.forEach(d=>{const el=document.getElementById('sr-'+d.id);p[d.id]=el?+el.value:d.d;});
   return p;
 }
 function runSim(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
   const p=getSimP();
-  function rv(id,def){const n=document.getElementById('sn-'+id);const s=document.getElementById('sr-'+id);return n?+n.value||(s?+s.value:def):s?+s.value:def;}
-  const dose=rv('dose',100); const tinf=rv('tinf',1); const nDose=rv('ndose',1); const tau=rv('tau',24); const tMax=rv('tmax',72);
+  const dose=+document.getElementById('sr-dose').value||100;
+  const tinf=+document.getElementById('sr-tinf').value||1;
+  const nDose=+document.getElementById('sr-ndose').value||1;
+  const tau=+document.getElementById('sr-tau').value||24;
+  const tMax=+document.getElementById('sr-tmax').value||72;
   const scale=document.getElementById('sim-scale').value;
   const N=400;
   const tGrid=Array.from({length:N+1},(_,i)=>tMax*i/N);
@@ -2277,7 +2052,6 @@ function runSim(){
   document.getElementById('sc-cl').textContent=CL.toFixed(3);
   document.getElementById('sc-vd').textContent=V1.toFixed(1);
   const dispC=concs.map(c=>scale==='log'&&c<=0?null:c);
-  G._simData={tGrid,concs};
   dKill('simM');
   G.charts['simM']=new Chart(document.getElementById('sim-cv'),{type:'line',
     data:{datasets:[{label:`${r}·${nc}室`,
@@ -2298,17 +2072,10 @@ function runSim(){
 function resetSim(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
   const defs=SIM_DEFS[r]?.[nc]||[];
-  defs.forEach(d=>{
-    const sr=document.getElementById('sr-'+d.id);if(sr) sr.value=d.d;
-    const sn=document.getElementById('sn-'+d.id);if(sn) sn.value=d.d;
-    const sv=document.getElementById('sv-'+d.id);if(sv) sv.textContent=d.d;
-  });
-  const defaults={dose:100,ndose:1,tau:24,tmax:72,tinf:1};
-  Object.entries(defaults).forEach(([k,v])=>{
-    const sr=document.getElementById('sr-'+k);if(sr) sr.value=v;
-    const sn=document.getElementById('sn-'+k);if(sn) sn.value=v;
-    const sv=document.getElementById('sv-'+k);if(sv) sv.textContent=v;
-  });
+  defs.forEach(d=>{const el=document.getElementById('sr-'+d.id);if(el){el.value=d.d;const lv=document.getElementById('sv-'+d.id);if(lv)lv.textContent=d.d;}});
+  ['dose','ndose','tau','tmax'].forEach(k=>{const defaults={dose:100,ndose:1,tau:24,tmax:72};
+    const el=document.getElementById('sr-'+k);if(el)el.value=defaults[k];
+    const lv=document.getElementById('sv-'+k);if(lv)lv.textContent=defaults[k];});
   runSim();
 }
 // ═══════════════════════════════════════════════════════════
@@ -2496,38 +2263,23 @@ function downloadReport(){
       const{fit,def,dose,tinf,data}=G.caResult;
       const nca=caFittedNCA(data,fit,def,dose,tinf);
       const fitImgUrl=G.caResult.fitImgUrl||null;
-      const p=fit.params; const pNames=def.params.map(pp=>pp.id);
-      const unitMap={ka:'h⁻¹',k10:'h⁻¹',k12:'h⁻¹',k21:'h⁻¹',k13:'h⁻¹',k31:'h⁻¹',V1:'L'};
-      const descMapRpt={ka:'吸收速率常数',k10:'一级消除速率常数',k12:'中央→外周室1',k21:'外周室1→中央',k13:'中央→外周室2',k31:'外周室2→中央',V1:'中央室分布容积'};
-      const drv=calcDerivedParams(p,def,dose,tu);
       caSec=`<h2>四、房室模型分析结果</h2>
-        <p><b>模型：</b>${def.label} &nbsp; <b>权重：</b>${G.caResult.wt} &nbsp; <b>算法：</b>Levenberg-Marquardt NLS（多起点搜索）</p>
-        <h3>Ⅰ 直接拟合参数</h3>
-        <table><thead><tr><th>参数</th><th>估计值</th><th>单位</th><th>含义</th></tr></thead><tbody>
-          ${pNames.map(nm=>`<tr><td>${nm}</td><td>${p[nm]?p[nm].toFixed(6):'—'}</td><td>${unitMap[nm]||'—'}</td><td>${descMapRpt[nm]||''}</td></tr>`).join('')}
+        <p><b>模型：</b>${def.label} &nbsp; <b>权重：</b>${G.caResult.wt} &nbsp; <b>算法：</b>Levenberg-Marquardt NLS</p>
+        <h3>4.1 拟合统计</h3>
+        <p>R² = ${fit.r2.toFixed(4)} &nbsp; AIC = ${fit.aic.toFixed(2)} &nbsp; BIC = ${fit.bic.toFixed(2)} &nbsp; RMSE = ${fit.rmse.toFixed(4)}</p>
+        <h3>4.2 拟合参数</h3>
+        <table><thead><tr><th>参数</th><th>估计值</th><th>单位</th></tr></thead><tbody>
+          ${def.params.map(pp=>`<tr><td>${pp.id}</td><td>${fit.params[pp.id]?fit.params[pp.id].toFixed(6):'—'}</td><td>${unitMap[pp.id]||'—'}</td></tr>`).join('')}
         </tbody></table>
-        <h3>Ⅱ 模型派生参数</h3>
-        <table><thead><tr><th>参数</th><th>数值</th></tr></thead><tbody>
-          ${Object.entries(drv).map(([k,v])=>`<tr><td>${k}</td><td>${fmt(v,4)}</td></tr>`).join('')}
-        </tbody></table>
-        <h3>Ⅲ 诊断参数（基于拟合曲线）</h3>
+        <h3>4.3 模型衍生PK参数（基于拟合曲线）</h3>
         ${nca?`<table><thead><tr><th>参数</th><th>数值</th><th>单位</th></tr></thead><tbody>
-          <tr><td>Cmax</td><td>${fmt(nca.cmax,4)}</td><td>${cu}</td></tr>
-          <tr><td>Tmax</td><td>${fmt(nca.tmax,4)}</td><td>${tu}</td></tr>
-          <tr><td>AUC₀₋t</td><td>${fmt(nca.auc0t,4)}</td><td>${cu}·${tu}</td></tr>
-          <tr><td>AUC₀₋∞</td><td>${fmt(nca.auc0inf,4)}</td><td>${cu}·${tu}</td></tr>
-          <tr><td>t½</td><td>${fmt(nca.t_half,4)}</td><td>${tu}</td></tr>
-          <tr><td>CL/F</td><td>${fmt(nca.cl,4)}</td><td>L/${tu}</td></tr>
-        </tbody></table>`:''}
-        <h3>Ⅳ 拟合诊断统计</h3>
-        <table><thead><tr><th>统计量</th><th>数值</th></tr></thead><tbody>
-          <tr><td>R²</td><td>${fit.r2.toFixed(6)}</td></tr>
-          <tr><td>RMSE</td><td>${fit.rmse.toFixed(6)}</td></tr>
-          <tr><td>AIC</td><td>${fit.aic.toFixed(4)}</td></tr>
-          <tr><td>BIC</td><td>${fit.bic.toFixed(4)}</td></tr>
-          <tr><td>WSSE</td><td>${fit.wsse.toFixed(6)}</td></tr>
-          <tr><td>n (数据点)</td><td>${data.length}</td></tr>
-        </tbody></table>
+          <tr><td>Cmax（拟合）</td><td>${fmt(nca.cmax,3)}</td><td>${cu}</td></tr>
+          <tr><td>Tmax（拟合）</td><td>${fmt(nca.tmax,2)}</td><td>${tu}</td></tr>
+          <tr><td>AUC₀₋t（拟合）</td><td>${fmt(nca.auc0t,2)}</td><td>${cu}·${tu}</td></tr>
+          <tr><td>AUC₀₋∞（拟合）</td><td>${fmt(nca.auc0inf,2)}</td><td>${cu}·${tu}</td></tr>
+          <tr><td>t½</td><td>${fmt(nca.t_half,3)}</td><td>${tu}</td></tr>
+          <tr><td>CL/F</td><td>${fmt(nca.cl,3)}</td><td>L/${tu}</td></tr>
+        </tbody></table>`:'<p>NCA参数不可用</p>'}
         ${incCAimg?`<h3>4.4 拟合曲线</h3>${imgTag(fitImgUrl,500)}<h3>4.5 加权残差 vs 时间</h3>${imgTag(caResImg,440)}`:''}`;
     }
   }
@@ -2600,28 +2352,6 @@ ${methSec}${ncaSec}${caSec}${disclaimSec}
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-// ─── Simulation download helpers ───
-function simDownloadChart(){
-  const cv=document.getElementById('sim-cv');
-  if(!cv){notify('请先运行模拟','warn');return;}
-  const a=document.createElement('a');
-  a.href=cv.toDataURL('image/png');
-  a.download='PK_Simulation_Chart.png';
-  a.click();
-  notify('模拟图已下载','ok');
-}
-function simDownloadCSV(){
-  if(!G._simData){notify('请先运行模拟','warn');return;}
-  const{tGrid,concs}=G._simData;
-  const rows=[['Time(h)','Conc(ng/mL)'],...tGrid.map((t,i)=>[t.toFixed(4),concs[i].toFixed(6)])];
-  const csv=rows.map(r=>r.join(',')).join('
-');
-  const b=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);
-  a.download='PK_Simulation_Data.csv';a.click();URL.revokeObjectURL(a.href);
-  notify('模拟数据CSV已下载','ok');
-}
-
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('rpt-date').value=new Date().toISOString().split('T')[0];
   updateCAModel();
