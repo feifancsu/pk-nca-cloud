@@ -734,7 +734,7 @@ function go(id){
 }
 function openMo(id){document.getElementById(id).classList.add('show');}
 function closeMo(id){document.getElementById(id).classList.remove('show');}
-function sv(id,val){document.getElementById('sv-'+id).textContent=+val%1===0?val:parseFloat(val).toFixed(+val<0.1?4:2);}
+function sv(id,val){const el=document.getElementById('sv-'+id);if(el)el.textContent=+val%1===0?val:parseFloat(val).toFixed(+val<0.1?4:2);}
 function notify(msg,type='info'){
   const icons={info:'ℹ️',ok:'✅',warn:'⚠️',err:'❌'};
   const bc={info:'var(--ac)',ok:'var(--ac3)',warn:'var(--warn)',err:'var(--err)'};
@@ -1188,6 +1188,8 @@ function runNCA(){
   renderNCAResults();
   renderNCALZ();
   ncaTab('res');
+  // Pre-render λz charts offscreen for Word report capture
+  setTimeout(preRenderLZImages, 500);
   notify(`NCA完成 · ${subs.length}名受试者`,'ok');
 }
 
@@ -2242,14 +2244,23 @@ function updateSim(){
   document.getElementById('sim-pp').innerHTML=html;
 }
 function syncSimInput(id, val){
+  // Called when slider moves → update number input
   const n=document.getElementById('sn-'+id);
-  if(n) n.value=parseFloat(val).toFixed(+val<0.01?4:+val<0.1?3:+val<10?3:2);
-  sv(id,val);runSim();
+  if(n){
+    const numVal=parseFloat(val);
+    n.value=numVal%1===0?numVal:numVal.toFixed(numVal<0.01?4:numVal<0.1?3:3);
+  }
+  sv(id,val);
+  runSim();
 }
 function syncSimSlider(id, val){
+  // Called when number input changes → update slider
+  const numVal=parseFloat(val);
+  if(isNaN(numVal)) return;
   const s=document.getElementById('sr-'+id);
-  if(s){s.value=val;}
-  sv(id,val);runSim();
+  if(s) s.value=numVal;
+  sv(id,val);
+  runSim();
 }
 function getSimP(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
@@ -2267,7 +2278,7 @@ function getSimP(){
 function runSim(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
   const p=getSimP();
-  function rv(id,def){const n=document.getElementById('sn-'+id);const s=document.getElementById('sr-'+id);return n?+n.value||(s?+s.value:def):s?+s.value:def;}
+  function rv(id,def){const n=document.getElementById('sn-'+id);const s=document.getElementById('sr-'+id);const nv=n?+n.value:NaN;const sv2=s?+s.value:NaN;return !isNaN(nv)&&nv>0?nv:!isNaN(sv2)&&sv2>0?sv2:def;}
   const dose=rv('dose',100); const tinf=rv('tinf',1); const nDose=rv('ndose',1); const tau=rv('tau',24); const tMax=rv('tmax',72);
   const scale=document.getElementById('sim-scale').value;
   const N=400;
@@ -2361,16 +2372,58 @@ function preRenderBatchImages(results, def, dose, tinf, wt){
   });
 }
 
+// Pre-render all λz charts into offscreen canvases and store as base64 on result objects
+function preRenderLZImages(){
+  if(!G.ncaResults) return;
+  const pool=document.getElementById('offscreen-pool');
+  if(!pool) return;
+  // Clear old lz canvases from pool (keep CA ones separate by prefix)
+  Array.from(pool.children).filter(el=>el.dataset.lz).forEach(el=>el.remove());
+  G.ncaResults.forEach(r=>{
+    if(!r.lz) return;
+    const cv=document.createElement('canvas');
+    cv.width=640; cv.height=300;
+    cv.dataset.lz='1';
+    pool.appendChild(cv);
+    // Draw the chart
+    const lzR=r.lz;
+    const fps=lzR.pts;
+    const tMin=fps[0].t, tMax=fps[fps.length-1].t*1.12;
+    const regLine=[];
+    for(let t=tMin;t<=tMax;t+=(tMax-tMin)/50) regLine.push({x:t,y:Math.exp(lzR.intercept-r.lambda_z*t)});
+    const allPts=r.ts.map((t,i)=>r.cs[i]>0?{x:t,y:r.cs[i]}:null).filter(Boolean);
+    const ch=new Chart(cv,{type:'scatter',data:{datasets:[
+      {label:'观测点',data:allPts,backgroundColor:'rgba(100,116,139,.7)',pointRadius:5},
+      {label:'λz拟合点',data:fps.map(p=>({x:p.t,y:p.c})),backgroundColor:'rgba(0,212,255,.9)',pointRadius:7},
+      {label:'回归线',data:regLine,type:'line',borderColor:'rgba(245,158,11,.9)',borderWidth:2,pointRadius:0,tension:0}
+    ]},options:{animation:{duration:0},responsive:false,maintainAspectRatio:false,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'时间',color:'#333'},ticks:{color:'#555'},grid:{color:'rgba(0,0,0,.08)'}},
+        y:{type:'logarithmic',title:{display:true,text:'浓度 (log)',color:'#333'},ticks:{color:'#555'},grid:{color:'rgba(0,0,0,.08)'}}
+      },
+      plugins:{legend:{labels:{color:'#333',font:{size:10}}},
+        title:{display:true,text:`${r.subj}  λz=${r.lambda_z?r.lambda_z.toFixed(4):'—'}  t½=${r.t_half?r.t_half.toFixed(3):'—'}  adjR²=${r.r2adj_lz?r.r2adj_lz.toFixed(4):'—'}`,color:'#222',font:{size:11}}
+      }
+    }});
+    // Capture immediately (animation:0 means it's drawn synchronously)
+    try{ r.lzImgUrl=cv.toDataURL('image/png'); }catch(e){}
+    ch.destroy();
+  });
+}
+
 function ensureNCAChartsRendered(cb){
-  // Make sure λz charts are rendered (they need lambda tab to be visited)
+  // Ensure offscreen λz images are ready, then call cb
   if(G.ncaResults&&G.ncaResults.length>0){
-    const firstId='lzc-'+G.ncaResults[0].subj.replace(/[^a-z0-9]/gi,'_');
-    if(!document.getElementById(firstId)){
-      // render lambda tab first
-      renderNCALZ();
+    const needsRender=G.ncaResults.some(r=>r.lz&&!r.lzImgUrl);
+    if(needsRender){
+      preRenderLZImages();
+      setTimeout(cb,200);
+    } else {
+      cb();
     }
+  } else {
+    cb();
   }
-  setTimeout(cb,300);
 }
 
 function downloadReport(){
@@ -2396,12 +2449,12 @@ function downloadReport(){
   const ncaMainImg=incNCAimg?getImg('nca-chart-main'):null;
   const ncaSemiImg=incNCAimg?getImg('nca-chart-semi'):null;
 
-  // ── Per-subject NCA λz chart images (canvases rendered in λz tab) ──
+  // ── Per-subject NCA λz chart images (pre-rendered offscreen) ──
   const ncaLZImgs=[];
   if(incNCAimg&&G.ncaResults){
     G.ncaResults.forEach(r=>{
-      const cid='lzc-'+r.subj.replace(/[^a-z0-9]/gi,'_');
-      const img=getImg(cid);
+      // Use pre-rendered offscreen image if available, else try DOM canvas
+      const img=r.lzImgUrl||getImg('lzc-'+r.subj.replace(/[^a-z0-9]/gi,'_'));
       ncaLZImgs.push({subj:r.subj,img});
     });
   }
