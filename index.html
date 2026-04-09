@@ -971,6 +971,8 @@ function loadDemo(){
   // Update NCA / CA status
   syncNCAStatus();syncCAStatus();
   updateCASubjList(subs);
+  // Invalidate cached chart images (data changed)
+  G._ncaMainImgUrl=null; G._ncaSemiImgUrl=null;
   notify('示例数据已加载（3受试者，口服给药）','ok');
 }
 
@@ -1183,13 +1185,15 @@ function runNCA(){
   });
 
   G.ncaResults=results;
+  // Reset cached images (fresh run)
+  G._ncaMainImgUrl=null; G._ncaSemiImgUrl=null;
   pg.style.width='100%';
   setTimeout(()=>pg.style.width='0',800);
   renderNCAResults();
   renderNCALZ();
   ncaTab('res');
-  // Pre-render λz charts offscreen for Word report capture
-  setTimeout(preRenderLZImages, 500);
+  // Pre-render ALL NCA charts offscreen for Word report (λz + line/semilog)
+  setTimeout(()=>{ preRenderLZImages(); preRenderNCACharts(); }, 500);
   notify(`NCA完成 · ${subs.length}名受试者`,'ok');
 }
 
@@ -2373,6 +2377,50 @@ function preRenderBatchImages(results, def, dose, tinf, wt){
 }
 
 // Pre-render all λz charts into offscreen canvases and store as base64 on result objects
+// ── Pre-render NCA line-plot and semi-log charts offscreen for Word report ──
+function preRenderNCACharts(){
+  if(!G.data) return;
+  const pool=document.getElementById('offscreen-pool');
+  if(!pool) return;
+  // Remove old NCA chart canvases from pool
+  Array.from(pool.children).filter(el=>el.dataset.ncachart).forEach(el=>el.remove());
+  const subjects=[...new Set(G.data.map(r=>r.Subject))];
+  const COLS=['#1a56db','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
+  // Helper: build datasets
+  const mkDS=(s,i,logY)=>{
+    const rows=G.data.filter(r=>r.Subject===s).sort((a,b)=>a.Time-b.Time);
+    return{label:s,data:rows.filter(r=>!logY||r.Conc>0).map(r=>({x:r.Time,y:r.Conc})),
+      borderColor:COLS[i%7],backgroundColor:COLS[i%7]+'30',
+      pointBackgroundColor:COLS[i%7],pointRadius:4,tension:.3,fill:false};
+  };
+  // Linear chart
+  const cvLin=document.createElement('canvas');
+  cvLin.width=640; cvLin.height=340; cvLin.dataset.ncachart='lin';
+  pool.appendChild(cvLin);
+  const chLin=new Chart(cvLin,{type:'line',data:{datasets:subjects.map((s,i)=>mkDS(s,i,false))},
+    options:{animation:{duration:0},responsive:false,maintainAspectRatio:false,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'时间 (h)',color:'#333'},ticks:{color:'#555'},grid:{color:'rgba(0,0,0,.08)'}},
+        y:{type:'linear',title:{display:true,text:'浓度',color:'#333'},ticks:{color:'#555'},grid:{color:'rgba(0,0,0,.08)'}}
+      },plugins:{legend:{labels:{color:'#333',font:{size:11}}},
+        title:{display:true,text:'浓度-时间曲线（线性坐标）',color:'#1a3a6b',font:{size:13}}}}});
+  try{ G._ncaMainImgUrl=cvLin.toDataURL('image/png'); }catch(e){}
+  chLin.destroy();
+  // Semi-log chart
+  const cvLog=document.createElement('canvas');
+  cvLog.width=640; cvLog.height=300; cvLog.dataset.ncachart='log';
+  pool.appendChild(cvLog);
+  const chLog=new Chart(cvLog,{type:'line',data:{datasets:subjects.map((s,i)=>mkDS(s,i,true))},
+    options:{animation:{duration:0},responsive:false,maintainAspectRatio:false,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'时间 (h)',color:'#333'},ticks:{color:'#555'},grid:{color:'rgba(0,0,0,.08)'}},
+        y:{type:'logarithmic',title:{display:true,text:'浓度（对数坐标）',color:'#333'},ticks:{color:'#555'},grid:{color:'rgba(0,0,0,.08)'}}
+      },plugins:{legend:{labels:{color:'#333',font:{size:11}}},
+        title:{display:true,text:'浓度-时间曲线（半对数坐标）',color:'#1a3a6b',font:{size:13}}}}});
+  try{ G._ncaSemiImgUrl=cvLog.toDataURL('image/png'); }catch(e){}
+  chLog.destroy();
+}
+
 function preRenderLZImages(){
   if(!G.ncaResults) return;
   const pool=document.getElementById('offscreen-pool');
@@ -2412,15 +2460,13 @@ function preRenderLZImages(){
 }
 
 function ensureNCAChartsRendered(cb){
-  // Ensure offscreen λz images are ready, then call cb
-  if(G.ncaResults&&G.ncaResults.length>0){
-    const needsRender=G.ncaResults.some(r=>r.lz&&!r.lzImgUrl);
-    if(needsRender){
-      preRenderLZImages();
-      setTimeout(cb,200);
-    } else {
-      cb();
-    }
+  // Ensure ALL offscreen NCA images are ready (λz + line/semilog), then call cb
+  const needsLZ=G.ncaResults&&G.ncaResults.some(r=>r.lz&&!r.lzImgUrl);
+  const needsNCA=G.data&&(!G._ncaMainImgUrl||!G._ncaSemiImgUrl);
+  if(needsLZ||needsNCA){
+    if(needsLZ) preRenderLZImages();
+    if(needsNCA) preRenderNCACharts();
+    setTimeout(cb, 350);
   } else {
     cb();
   }
@@ -2445,9 +2491,11 @@ function downloadReport(){
     ?'线性梯形法（Linear Trapezoidal）'
     :'线性升-对数降法（Linear Up/Log Down）';
 
-  // ── Shared NCA charts (all subjects together) ──
-  const ncaMainImg=incNCAimg?getImg('nca-chart-main'):null;
-  const ncaSemiImg=incNCAimg?getImg('nca-chart-semi'):null;
+  // ── Shared NCA charts (pre-rendered offscreen images) ──
+  // Use stored offscreen images (reliable, even if tab is hidden)
+  // Fall back to DOM canvas only if offscreen not available
+  const ncaMainImg=incNCAimg?(G._ncaMainImgUrl||getImg('nca-chart-main')):null;
+  const ncaSemiImg=incNCAimg?(G._ncaSemiImgUrl||getImg('nca-chart-semi')):null;
 
   // ── Per-subject NCA λz chart images (pre-rendered offscreen) ──
   const ncaLZImgs=[];
@@ -2613,10 +2661,12 @@ function downloadReport(){
   h2{font-size:14pt;font-weight:bold;color:#1a3a6b;margin-top:20pt;margin-bottom:7pt;
     border-bottom:1.5pt solid #1a3a6b;padding-bottom:2pt;font-family:'黑体',SimHei,Arial}
   h3{font-size:12pt;font-weight:bold;color:#2d5a9e;margin-top:11pt;margin-bottom:5pt}
-  table{width:100%;border-collapse:collapse;margin:7pt 0;font-size:10pt}
-  th{background:#1a3a6b;color:#fff;padding:5pt 6pt;text-align:center;font-family:'黑体',SimHei,Arial}
-  td{padding:4pt 6pt;border:0.5pt solid #aaa;text-align:center}
-  tr:nth-child(even) td{background:#f0f4fa}
+  table{width:100%;border-collapse:collapse;margin:10pt auto;font-size:10pt;text-align:center}
+  th{background:#1a3a6b;color:#fff;padding:5pt 7pt;text-align:center;font-family:'黑体',SimHei,Arial;vertical-align:middle}
+  td{padding:5pt 7pt;border:0.5pt solid #bbb;text-align:center;vertical-align:middle}
+  tr:nth-child(even) td{background:#f0f5fb}
+  td:first-child{text-align:left;font-weight:500}
+  th:first-child{text-align:left}
   .cover{text-align:center;padding:48pt 0 26pt;border-bottom:2pt solid #1a3a6b;margin-bottom:16pt}
   .discl{background:#fff8e1;border-left:3pt solid #f59e0b;padding:8pt 12pt;font-size:10pt;color:#666}
   img{max-width:100%}
@@ -2634,12 +2684,12 @@ function downloadReport(){
 </div>
 <h2>一、研究概述</h2>
 <table><tbody>
-  <tr><td style="text-align:left;width:28%"><b>药物名称</b></td><td style="text-align:left">${drug}</td>
-      <td style="text-align:left;width:28%"><b>分析人员</b></td><td style="text-align:left">${analyst}</td></tr>
-  <tr><td style="text-align:left"><b>研究机构</b></td><td style="text-align:left">${inst}</td>
-      <td style="text-align:left"><b>报告日期</b></td><td style="text-align:left">${date}</td></tr>
-  <tr><td style="text-align:left"><b>受试者数</b></td><td style="text-align:left">${G.ncaResults?G.ncaResults.length:'—'}</td>
-      <td style="text-align:left"><b>分析平台</b></td><td style="text-align:left">PharmCloud PK v3.0</td></tr>
+  <tr><td style="text-align:left;width:28%"><b>药物名称</b></td><td>${drug}</td>
+      <td style="text-align:left;width:28%"><b>分析人员</b></td><td>${analyst}</td></tr>
+  <tr><td><b>研究机构</b></td><td>${inst}</td>
+      <td><b>报告日期</b></td><td>${date}</td></tr>
+  <tr><td><b>受试者数</b></td><td>${G.ncaResults?G.ncaResults.length:'—'}</td>
+      <td><b>分析平台</b></td><td>PharmCloud PK v3.0</td></tr>
 </tbody></table>
 ${methSec}${ncaSec}${caSec}${disclaimSec}
 </body></html>`;
