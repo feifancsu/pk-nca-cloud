@@ -9,17 +9,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 :root{
-  --bg:#05080f;--surf:#0d1117;--panel:#111827;--bdr:rgba(255,255,255,.08);
-  --ac:#00d4ff;--ac2:#7c3aed;--ac3:#10b981;--warn:#f59e0b;--err:#ef4444;
-  --txt:#e2e8f0;--mu:#64748b;
+  --bg:#f0f4f8;--surf:#ffffff;--panel:#f8fafc;--bdr:rgba(0,0,0,.10);
+  --ac:#0077cc;--ac2:#6d28d9;--ac3:#059669;--warn:#d97706;--err:#dc2626;
+  --txt:#1e293b;--mu:#64748b;
   --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--disp:'Syne',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{height:100%}
 body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;height:100%;overflow:hidden}
 ::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--surf)}
-::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+::-webkit-scrollbar-track{background:#e2e8f0}
+::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
 
 /* APP SHELL */
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
@@ -28,7 +28,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14p
 .nav{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
   padding:0 16px;height:56px;background:var(--surf);border-bottom:1px solid var(--bdr);z-index:100}
 .nav-brand{display:flex;align-items:center;gap:10px}
-.logo{width:32px;height:32px;background:linear-gradient(135deg,var(--ac),var(--ac2));
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#0077cc,#6d28d9);
   border-radius:8px;display:flex;align-items:center;justify-content:center;
   font-family:var(--disp);font-weight:800;font-size:12px;color:#fff;flex-shrink:0}
 .nav-ttl{font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.2}
@@ -37,11 +37,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14p
 .nav-tabs{display:flex;gap:2px}
 .nt{padding:5px 9px;border-radius:5px;border:none;background:transparent;color:var(--mu);
   font-size:11px;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap}
-.nt:hover{color:var(--txt);background:rgba(255,255,255,.05)}
-.nt.active{color:var(--ac);background:rgba(0,212,255,.08);font-weight:600}
+.nt:hover{color:var(--ac);background:rgba(0,119,204,.08)}
+.nt.active{color:var(--ac);background:rgba(0,119,204,.10);font-weight:600}
 .csu-tag{display:flex;align-items:center;gap:4px;padding:3px 9px;
-  background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);
-  border-radius:20px;color:#a78bfa;font-size:10px;font-weight:500}
+  background:rgba(109,40,217,.08);border:1px solid rgba(109,40,217,.22);
+  border-radius:20px;color:#6d28d9;font-size:10px;font-weight:500}
 
 /* PAGES - fill remaining height */
 .page{display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column}
@@ -52,37 +52,38 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14p
 .home-wrap{padding:36px 28px;display:flex;flex-direction:column;align-items:center;
   text-align:center;min-height:calc(100vh - 56px);position:relative}
 .hbg{position:absolute;inset:0;
-  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(0,212,255,.05) 0%,transparent 65%);
+  background:radial-gradient(ellipse 80% 55% at 50% 0%,rgba(0,119,204,.08) 0%,transparent 70%);
   pointer-events:none}
 .hgrid{position:absolute;inset:0;
-  background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),
-  linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);
+  background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
   background-size:44px 44px;pointer-events:none}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 13px;
   background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);
   border-radius:20px;font-size:10px;color:#a78bfa;margin-bottom:18px;font-family:var(--mono)}
 .hero-title{font-family:var(--disp);font-size:44px;font-weight:800;letter-spacing:-2px;
   line-height:1.1;margin-bottom:28px;position:relative;z-index:1}
-.hero-title span{background:linear-gradient(130deg,var(--ac),var(--ac2));
+.hero-title span{background:linear-gradient(130deg,#0077cc,#6d28d9);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
   margin-bottom:44px;position:relative;z-index:1}
 .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
   gap:12px;max-width:800px;width:100%;position:relative;z-index:1;margin:0 auto}
-.fc{background:var(--panel);border:1px solid var(--bdr);border-radius:12px;
-  padding:16px;text-align:left;cursor:pointer;transition:all .18s}
-.fc:hover{border-color:rgba(0,212,255,.28);transform:translateY(-2px)}
+.fc{background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  padding:16px;text-align:left;cursor:pointer;transition:all .18s;
+  box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.fc:hover{border-color:var(--ac);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,119,204,.12)}
 .fci{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;
   justify-content:center;margin-bottom:8px;font-size:14px}
 .fc h3{font-family:var(--disp);font-size:12px;font-weight:700;margin-bottom:4px}
 .fc p{color:var(--mu);font-size:10px;line-height:1.6}
-.home-footer{margin-top:36px;font-size:10px;color:var(--mu);position:relative;z-index:1}
+.home-footer{margin-top:36px;font-size:10px;color:#94a3b8;position:relative;z-index:1}
 
 /* ANALYSIS LAYOUT */
 .al{flex:1;display:grid;grid-template-columns:264px 1fr;min-height:0;overflow:hidden}
 .sb{background:var(--surf);border-right:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column}
 .sbs{padding:12px 13px;border-bottom:1px solid var(--bdr)}
-.sbh{font-size:9px;font-weight:600;letter-spacing:1.8px;color:var(--mu);
+.sbh{font-size:9px;font-weight:700;letter-spacing:1.8px;color:#94a3b8;
   text-transform:uppercase;margin-bottom:8px}
 .main{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column}
 .tb-bar{flex-shrink:0;padding:6px 12px;background:var(--surf);border-bottom:1px solid var(--bdr);
@@ -93,28 +94,28 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14p
 .btn{padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-size:11px;
   font-family:var(--sans);font-weight:500;transition:all .15s;
   display:inline-flex;align-items:center;gap:4px}
-.btn-g{background:transparent;color:var(--mu);border:1px solid var(--bdr)}
-.btn-g:hover{color:var(--txt);border-color:rgba(255,255,255,.2)}
+.btn-g{background:#fff;color:#475569;border:1px solid #cbd5e1}
+.btn-g:hover{color:var(--ac);border-color:var(--ac);background:#f0f9ff}
 .btn-p{background:linear-gradient(135deg,var(--ac),#0099cc);color:#000;font-weight:700}
 .btn-p:hover{opacity:.88;transform:translateY(-1px)}
-.btn-ok{background:linear-gradient(135deg,var(--ac3),#059669);color:#fff;font-weight:600}
+.btn-ok{background:linear-gradient(135deg,#059669,#047857);color:#fff;font-weight:600}
 .btn-r{width:100%;justify-content:center;padding:9px;font-size:12px;
-  background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;font-weight:700;
+  background:linear-gradient(135deg,#0077cc,#6d28d9);color:#fff;font-weight:700;
   border-radius:7px;border:none;cursor:pointer;transition:all .18s}
 .btn-r:hover{opacity:.9;transform:translateY(-1px)}
 .btn-sm{padding:3px 8px;font-size:10px}
-.btn-cmp{background:rgba(124,58,237,.12);color:#a78bfa;border:1px solid rgba(124,58,237,.3);
+.btn-cmp{background:rgba(109,40,217,.08);color:#6d28d9;border:1px solid rgba(109,40,217,.25);
   width:100%;justify-content:center;padding:7px;font-size:10px;margin-top:5px}
-.btn-cmp:hover{background:rgba(124,58,237,.22)}
+.btn-cmp:hover{background:rgba(109,40,217,.14)}
 
 /* FORM */
 .fr{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
 .fl{font-size:9px;color:var(--mu);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
-.fi,.fs{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:5px;
+.fi,.fs{background:#fff;border:1px solid #cbd5e1;border-radius:5px;
   padding:5px 8px;color:var(--txt);font-size:11px;font-family:var(--mono);
   outline:none;width:100%;transition:border .15s}
-.fi:focus,.fs:focus{border-color:rgba(0,212,255,.35)}
-.fs option{background:#1e293b;color:var(--txt)}
+.fi:focus,.fs:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,119,204,.12)}
+.fs option{background:#fff;color:var(--txt)}
 textarea.fi{resize:vertical;min-height:80px;line-height:1.5}
 .pg2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .pg2 .fr{margin-bottom:0}
@@ -124,96 +125,97 @@ textarea.fi{resize:vertical;min-height:80px;line-height:1.5}
 .itb{padding:8px 13px;font-size:11px;border:none;background:transparent;color:var(--mu);
   cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;
   margin-bottom:-1px;transition:all .15s}
-.itb:hover{color:var(--txt)}.itb.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.itb:hover{color:var(--ac)}.itb.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;background:rgba(0,119,204,.04)}
 .itc{display:none;padding:13px 0}.itc.active{display:block}
 
 /* CHARTS */
-.cw{background:var(--panel);border:1px solid var(--bdr);border-radius:9px;padding:12px}
+.cw{background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .ct{font-size:11px;font-weight:600;margin-bottom:8px;display:flex;
   align-items:center;justify-content:space-between;color:var(--txt)}
 
 /* TABLES */
-.tw{background:var(--panel);border:1px solid var(--bdr);border-radius:9px;overflow:hidden}
+.tw{background:#fff;border:1px solid #e2e8f0;border-radius:9px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .ts{overflow:auto;max-height:280px}
 .pt{width:100%;border-collapse:collapse;font-size:10px}
-.pt th{background:rgba(255,255,255,.04);padding:6px 8px;text-align:left;
-  font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mu);
-  border-bottom:1px solid var(--bdr);white-space:nowrap;font-family:var(--sans);font-weight:600}
-.pt td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.025);
+.pt th{background:#f1f5f9;padding:6px 8px;text-align:left;
+  font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:#475569;
+  border-bottom:1px solid #e2e8f0;white-space:nowrap;font-family:var(--sans);font-weight:700}
+.pt td{padding:5px 8px;border-bottom:1px solid #f1f5f9;
   font-family:var(--mono);color:var(--txt)}
-.pt tr:hover td{background:rgba(255,255,255,.02)}
+.pt tr:hover td{background:#f0f9ff}
 .pt tr:last-child td{border-bottom:none}
-.pt .hl td{color:var(--ac)}
-.pt .sr td{background:rgba(0,212,255,.03)}
+.pt .hl td{color:var(--ac);font-weight:600}
+.pt .sr td{background:#f0f9ff}
 
 /* RESULT CARDS */
 .rcg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px}
-.rc{background:var(--panel);border:1px solid var(--bdr);border-radius:8px;padding:10px}
+.rc{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .rl{font-size:9px;color:var(--mu);margin-bottom:2px;font-weight:500}
-.rv{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--ac);line-height:1.2}
+.rv{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--ac);line-height:1.2}
 .ru{font-size:9px;color:var(--mu);margin-top:1px}
 
 /* BADGES */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;
   border-radius:20px;font-size:9px;font-weight:500}
-.b-ok{background:rgba(16,185,129,.1);color:var(--ac3);border:1px solid rgba(16,185,129,.2)}
-.b-info{background:rgba(0,212,255,.1);color:var(--ac);border:1px solid rgba(0,212,255,.2)}
-.b-warn{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+.b-ok{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.b-info{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+.b-warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 
 /* INFO BOXES */
-.ib{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);
-  border-radius:7px;padding:8px 10px;font-size:10px;color:rgba(224,242,254,.8);line-height:1.65}
-.wb{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);
-  border-radius:7px;padding:8px 10px;font-size:10px;color:rgba(253,230,138,.9);line-height:1.65}
+.ib{background:#eff6ff;border:1px solid #bfdbfe;
+  border-radius:7px;padding:8px 10px;font-size:10px;color:#1e40af;line-height:1.65}
+.wb{background:#fffbeb;border:1px solid #fcd34d;
+  border-radius:7px;padding:8px 10px;font-size:10px;color:#78350f;line-height:1.65}
 .sep{height:1px;background:var(--bdr);margin:8px 0}
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .sh h2{font-family:var(--disp);font-size:13px;font-weight:700}
 
 /* MODAL */
-.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+.mo{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);
   z-index:200;align-items:center;justify-content:center}
 .mo.show{display:flex}
-.md{background:var(--panel);border:1px solid var(--bdr);border-radius:12px;
-  padding:20px;width:560px;max-width:93vw;max-height:87vh;overflow-y:auto}
+.md{background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  padding:20px;width:560px;max-width:93vw;max-height:87vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.15)}
 .md-ttl{font-family:var(--disp);font-size:14px;font-weight:700;margin-bottom:12px;
   display:flex;justify-content:space-between;align-items:center}
 .xb{background:none;border:none;color:var(--mu);cursor:pointer;font-size:18px;line-height:1}
 .xb:hover{color:var(--txt)}
 
 /* PROGRESS */
-.pbar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-top:6px}
+.pbar{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin-top:6px}
 .pfill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));
   border-radius:2px;transition:width .35s;width:0}
 
 /* NOTIFICATIONS */
 .nc{position:fixed;top:62px;right:13px;z-index:300;display:flex;flex-direction:column;gap:5px;max-width:300px}
-.ni{background:var(--panel);border:1px solid var(--bdr);border-radius:7px;
+.ni{background:#fff;border:1px solid #e2e8f0;border-radius:7px;
   padding:8px 12px;font-size:11px;display:flex;align-items:flex-start;gap:6px;
-  box-shadow:0 6px 18px rgba(0,0,0,.4);animation:ns .22s ease}
+  box-shadow:0 4px 16px rgba(0,0,0,.12);animation:ns .22s ease}
 @keyframes ns{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 
 /* UPLOAD ZONE */
-.uz{border:2px dashed var(--bdr);border-radius:8px;padding:20px;text-align:center;
-  cursor:pointer;transition:all .15s;margin-bottom:8px}
-.uz:hover,.uz.drag{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.025)}
+.uz{border:2px dashed #cbd5e1;border-radius:8px;padding:20px;text-align:center;
+  cursor:pointer;transition:all .15s;margin-bottom:8px;background:#fafafa}
+.uz:hover,.uz.drag{border-color:var(--ac);background:#eff6ff}
 
 /* SLIDERS */
 .sw{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
 .sl{display:flex;justify-content:space-between;font-size:9px;color:var(--mu)}
 .sl span:last-child{color:var(--ac);font-family:var(--mono)}
-input[type=range]{width:100%;accent-color:var(--ac)}
+input[type=range]{width:100%;accent-color:var(--ac);cursor:pointer}
 
 /* COL MAPPING */
 .cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.cm-card{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:6px;padding:8px}
-.cm-l{font-size:8px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--mu);margin-bottom:4px}
+.cm-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px}
+.cm-l{font-size:8px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#64748b;margin-bottom:4px}
 
 @keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(0,212,255,0)}50%{box-shadow:0 0 16px rgba(0,212,255,.18)}}
 /* Slider+input combo */
 .si-row{display:grid;grid-template-columns:1fr 64px;gap:4px;align-items:center;margin-bottom:8px}
-.si-label{font-size:9px;color:var(--mu);margin-bottom:3px}
-.si-num{background:rgba(255,255,255,.07);border:1px solid var(--bdr);border-radius:5px;padding:3px 5px;color:var(--ac);font-size:11px;font-family:var(--mono);width:100%;text-align:right;outline:none}
-.si-num:focus{border-color:rgba(0,212,255,.4)}
+.si-label{font-size:9px;color:#64748b;font-weight:600;margin-bottom:3px}
+.si-num{background:#fff;border:1px solid #cbd5e1;border-radius:5px;padding:3px 5px;color:var(--ac);font-size:11px;font-family:var(--mono);width:100%;text-align:right;outline:none}
+.si-num:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,119,204,.12)}
 .pulse{animation:pulse 2.2s ease infinite}
 </style>
 </head>
@@ -618,8 +620,19 @@ input[type=range]{width:100%;accent-color:var(--ac)}
           <input type="number" class="si-num" id="sn-tmax" value="72" min="1" step="12" oninput="syncSimSlider('tmax',this.value)">
         </div>
       </div>
+      <div class="sbs">
+        <div class="sbh">数据生成设置</div>
+        <div class="si-label">采样时间间隔 (h)</div>
+        <div class="si-row">
+          <input type="range" id="sr-stepsize" min="0.01" max="2" step="0.01" value="0.1"
+            oninput="syncSimInput('stepsize',this.value)">
+          <input type="number" class="si-num" id="sn-stepsize" value="0.1" min="0.01" max="2" step="0.01"
+            oninput="syncSimSlider('stepsize',this.value)">
+        </div>
+        <div style="font-size:9px;color:var(--mu);margin-top:2px">最小0.01 h · 影响CSV输出密度</div>
+      </div>
       <div class="sbs"><div class="sbh">参数摘要</div>
-        <div id="sim-sum" style="font-size:10px;font-family:var(--mono);line-height:2">—</div>
+        <div id="sim-sum" style="font-size:10px;font-family:var(--mono);line-height:2;color:var(--txt)">—</div>
       </div>
       <div class="sbs"><button class="btn btn-g btn-sm" style="width:100%" onclick="resetSim()">↺ 重置</button></div>
     </div>
@@ -670,7 +683,7 @@ input[type=range]{width:100%;accent-color:var(--ac)}
         <div class="sbh" style="margin-bottom:7px">报告内容</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:11px">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-nca" checked> NCA分析参数与统计</label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-ca"> 房室模型拟合结果</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-ca" checked> 房室模型拟合结果</label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-methods" checked> 分析方法说明</label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-stats" checked> 描述性统计（均值/SD/CV%）</label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rpt-nca-img" checked> 输出NCA浓度-时间图</label>
@@ -901,9 +914,9 @@ function renderDataPlot(){
   dKill('dataPlot');
   G.charts['dataPlot']=new Chart(document.getElementById('data-plot-cv'),{type:'line',
     data:{datasets},options:{responsive:true,maintainAspectRatio:false,
-      scales:{x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-              y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}},
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}}}});
+      scales:{x:{type:'linear',title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+              y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}},
+      plugins:{legend:{labels:{color:'#475569',font:{size:9}}}}}});
 }
 
 function syncNCAStatus(){
@@ -1291,9 +1304,9 @@ function renderNCALZ(){
       {label:'λz拟合点',data:fps.map(p=>({x:p.t,y:p.c})),backgroundColor:'rgba(0,212,255,.9)',pointRadius:6},
       {label:'回归线',data:regLine,type:'line',borderColor:'rgba(245,158,11,.85)',borderWidth:2,pointRadius:0,tension:0}
     ]},options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{type:'logarithmic',title:{display:true,text:'浓度(log)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}}}});
+      x:{type:'linear',title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+      y:{type:'logarithmic',title:{display:true,text:'浓度(log)',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+    },plugins:{legend:{labels:{color:'#475569',font:{size:9}}}}}});
   });
 }
 
@@ -1312,16 +1325,16 @@ function renderNCAPlot(){
   G.charts['ncaM']=new Chart(document.getElementById('nca-chart-main'),{type:'line',
     data:{datasets:subs.map((s,i)=>mkDS(s,i,scale==='log'))},
     options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{type:scaleType,title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+      x:{type:'linear',title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+      y:{type:scaleType,title:{display:true,text:'浓度',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+    },plugins:{legend:{labels:{color:'#475569'}}}}});
   dKill('ncaS');
   G.charts['ncaS']=new Chart(document.getElementById('nca-chart-semi'),{type:'line',
     data:{datasets:subs.map((s,i)=>mkDS(s,i,true))},
     options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{type:'logarithmic',title:{display:true,text:'浓度(log)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+      x:{type:'linear',title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+      y:{type:'logarithmic',title:{display:true,text:'浓度(log)',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+    },plugins:{legend:{labels:{color:'#475569'}}}}});
 }
 
 function exportNCACSV(){
@@ -1443,67 +1456,225 @@ function getCAData(){
 // ═══════════════════════════════════════════════════════════
 // RK4 ODE ENGINE
 // ═══════════════════════════════════════════════════════════
+// ─── Core ODE: single-dose integration (no clamping, no dose event tracking) ───
+// Used by both CA fitting and simulation.
+// For SIMULATION: use rk4SimSuperpose() below (superposition, exact for linear systems)
+// For CA FITTING: use rk4Sim() directly (called with nDose=1, tau=99999)
+/**
+ * rk4Sim — Correct multi-dose PK simulation
+ *
+ * Algorithm:
+ *  1. Pre-compute ALL event times (dose injections + infusion start/end + output grid points)
+ *  2. Sort them into a master timeline
+ *  3. Within each segment between consecutive events, integrate with small fixed RK4 steps
+ *     (NO Math.max clamping on state — preserves mass conservation)
+ *  4. Apply dose events instantaneously at the exact event time
+ *  5. Return concentrations at original tGrid points
+ *
+ * This eliminates the three bugs in the previous implementation:
+ *  - Floating-point dose-event detection failures (missed doses → decreasing C)
+ *  - Math.max(0) clamping breaking ODE mass conservation in peripheral compartments
+ *  - Large step size causing events to be skipped or duplicated
+ */
 function rk4Sim(tGrid,p,route,nc,dose,tinf,nDose,tau){
   const{k10=.15,k12=0,k21=0,k13=0,k31=0,ka=1.5,V1=30}=p;
-  function derivs(t,X,ir){
+  const dim=route==='ev'?nc+1:nc;
+
+  // ODE right-hand side — NO clamping here, pure physics
+  function oderhs(X,ir){
     if(route==='ev'){
       if(nc===1) return[-ka*X[0], ka*X[0]-k10*X[1]];
       if(nc===2) return[-ka*X[0], ka*X[0]-(k10+k12)*X[1]+k21*X[2], k12*X[1]-k21*X[2]];
-      return[-ka*X[0], ka*X[0]-(k10+k12+k13)*X[1]+k21*X[2]+k31*X[3], k12*X[1]-k21*X[2], k13*X[1]-k31*X[3]];
+      return[-ka*X[0], ka*X[0]-(k10+k12+k13)*X[1]+k21*X[2]+k31*X[3],
+             k12*X[1]-k21*X[2], k13*X[1]-k31*X[3]];
     }
     if(nc===1) return[ir-k10*X[0]];
     if(nc===2) return[ir-(k10+k12)*X[0]+k21*X[1], k12*X[0]-k21*X[1]];
-    return[ir-(k10+k12+k13)*X[0]+k21*X[1]+k31*X[2], k12*X[0]-k21*X[1], k13*X[0]-k31*X[2]];
+    return[ir-(k10+k12+k13)*X[0]+k21*X[1]+k31*X[2],
+           k12*X[0]-k21*X[1], k13*X[0]-k31*X[2]];
   }
+
+  // Infusion rate at time t (for iv-inf only)
   function getIR(t){
     if(route!=='iv-inf') return 0;
-    let r=0;for(let d=0;d<nDose;d++){const td=d*tau;if(t>=td&&t<td+tinf)r+=dose/tinf;}return r;
+    for(let d=0;d<nDose;d++){
+      const s=d*tau, e=s+tinf;
+      if(t>=s-1e-12&&t<e-1e-12) return dose/tinf;
+    }
+    return 0;
   }
-  function getDim(){return route==='ev'?nc+1:nc;}
-  function getC(X){return Math.max(0,(route==='ev'?X[1]:X[0])/V1);}
-  function step(t,X,dt){
-    const ir=getIR(t+dt/2);
-    const k1=derivs(t,X,ir);
-    const X2=X.map((x,i)=>x+k1[i]*dt/2);
-    const k2=derivs(t+dt/2,X2,ir);
-    const X3=X.map((x,i)=>x+k2[i]*dt/2);
-    const k3=derivs(t+dt/2,X3,ir);
-    const X4=X.map((x,i)=>x+k3[i]*dt);
-    const k4=derivs(t+dt,X4,getIR(t+dt));
-    return X.map((x,i)=>Math.max(0,x+(k1[i]+2*k2[i]+2*k3[i]+k4[i])*dt/6));
+
+  // Single RK4 step — no clamping on state variables
+  function rk4step(t,X,dt){
+    const ir0=getIR(t), ir1=getIR(t+dt/2), ir2=getIR(t+dt);
+    const k1=oderhs(X,ir0);
+    const k2=oderhs(X.map((x,i)=>x+k1[i]*dt/2),ir1);
+    const k3=oderhs(X.map((x,i)=>x+k2[i]*dt/2),ir1);
+    const k4=oderhs(X.map((x,i)=>x+k3[i]*dt),ir2);
+    return X.map((x,i)=>x+(k1[i]+2*k2[i]+2*k3[i]+k4[i])*dt/6);
   }
-  const dim=getDim();
+
+  // Integrate from t1 to t2 with small steps (no event handling needed inside)
+  const MAX_DT=0.025; // 0.025h ≈ 1.5 min — small enough for accuracy
+  function integrate(t1,t2,X){
+    let t=t1;
+    while(t<t2-1e-14){
+      const dt=Math.min(MAX_DT, t2-t);
+      X=rk4step(t,X,dt);
+      t+=dt;
+    }
+    return X;
+  }
+
+  // Apply a bolus dose to the state vector
+  function applyBolus(X){
+    const nX=[...X];
+    if(route==='ev') nX[0]+=dose;  // add to absorption depot
+    else nX[0]+=dose;               // add to central compartment (iv-bolus)
+    return nX;
+  }
+
+  // Get observed concentration from state vector (only clamp at output)
+  function getC(X){ return Math.max(0,(route==='ev'?X[1]:X[0])/V1); }
+
+  // ── Build master timeline ──────────────────────────────────────
+  // Every unique time that needs special handling: dose events + infusion
+  // boundaries + all output grid points
+  const timeSet=new Set();
+  tGrid.forEach(t=>timeSet.add(t));
+
+  // Dose event times (for bolus: exact injection; for infusion: start/end)
+  const bolusTimes=[];  // times when bolus dose is injected
+  for(let d=0;d<nDose;d++){
+    const td=d*tau;
+    if(route!=='iv-inf'){
+      bolusTimes.push(td);
+      timeSet.add(td);
+    } else {
+      timeSet.add(td);          // infusion start
+      timeSet.add(td+tinf);     // infusion end
+    }
+  }
+  bolusTimes.sort((a,b)=>a-b);
+
+  // Sorted master timeline
+  const timeline=Array.from(timeSet).sort((a,b)=>a-b);
+
+  // ── Initialize state ───────────────────────────────────────────
   let X=new Array(dim).fill(0);
-  const doses=Array.from({length:nDose},(_,i)=>i*tau);
-  let dDone=0;
-  // first dose at t=0
-  if(route!=='iv-inf'&&doses[0]===0){
-    if(route==='ev') X[0]+=dose; else X[0]+=dose;
-    dDone=1;
+  let bIdx=0; // index into bolusTimes
+
+  // Apply any bolus doses scheduled exactly at t=0 (the start)
+  while(bIdx<bolusTimes.length&&bolusTimes[bIdx]<1e-12){
+    X=applyBolus(X);
+    bIdx++;
   }
-  const result=[getC(X)];
-  let cur=tGrid[0];
-  for(let gi=1;gi<tGrid.length;gi++){
-    const next=tGrid[gi];let t=cur;
-    while(t<next-1e-10){
-      let ev=next;
-      for(let d=dDone;d<nDose;d++) if(doses[d]>t+1e-10&&doses[d]<ev) ev=doses[d];
-      if(route==='iv-inf') for(let d=0;d<nDose;d++){const te=d*tau+tinf;if(te>t+1e-10&&te<ev) ev=te;}
-      const dt=Math.min(0.05,ev-t);if(dt<1e-12) break;
-      X=step(t,X,dt);t+=dt;
-      while(dDone<nDose&&Math.abs(t-doses[dDone])<1e-9){
-        if(route!=='iv-inf'){if(route==='ev') X[0]+=dose; else X[0]+=dose;}
-        dDone++;
+
+  // Map to store concentration at each timeline point
+  const concMap=new Map();
+  concMap.set(timeline[0], getC(X));
+
+  // ── Simulate segment by segment ───────────────────────────────
+  for(let ki=1;ki<timeline.length;ki++){
+    const t1=timeline[ki-1];
+    const t2=timeline[ki];
+
+    // Integrate from t1 to t2 (no dose events happen inside — they're all on timeline boundaries)
+    X=integrate(t1,t2,X);
+
+    // Apply all bolus doses scheduled at exactly t2
+    while(bIdx<bolusTimes.length&&bolusTimes[bIdx]<=t2+1e-10){
+      if(Math.abs(bolusTimes[bIdx]-t2)<1e-9){
+        X=applyBolus(X);
       }
+      bIdx++;
     }
-    while(dDone<nDose&&Math.abs(next-doses[dDone])<1e-9){
-      if(route!=='iv-inf'){if(route==='ev') X[0]+=dose; else X[0]+=dose;}
-      dDone++;
-    }
-    result.push(getC(X));
-    cur=next;
+
+    concMap.set(t2, getC(X));
   }
-  return result;
+
+  // ── Extract results at original tGrid points ──────────────────
+  return tGrid.map(t=>{
+    if(concMap.has(t)) return concMap.get(t);
+    // Should not happen since tGrid ⊆ timeline; fallback
+    return 0;
+  });
+}
+
+// ─── SUPERPOSITION SIMULATOR: exact multi-dose for linear PK models ───
+// Principle: For linear systems, C_multidose(t) = Σ_{d=0}^{nDose-1} C_single(t − d·τ)
+// This is mathematically exact and avoids ALL floating-point dose-timing issues.
+//
+// Algorithm:
+//  1. Integrate single dose on a fine internal grid (no dose events needed)
+//  2. For each output time t: sum contributions from all past doses via interpolation
+//
+function rk4SimSuperpose(tGrid, p, route, nc, dose, tinf, nDose, tau){
+  const {k10=.15, k12=0, k21=0, k13=0, k31=0, ka=1.5, V1=30} = p;
+  const tMax = tGrid[tGrid.length-1];
+
+  // ── Step 1: Single-dose concentration profile on fine internal grid ──
+  // Use enough points for accuracy (at least 600, more for short tau or long tMax)
+  const N_inner = Math.max(600, Math.ceil(tMax / 0.02));
+  const dtInner = tMax / N_inner;
+  const singleConcs = new Float64Array(N_inner + 1);
+
+  function derivsSingle(t, X){
+    // Input rate for iv-inf (single dose: starts at t=0, ends at t=tinf)
+    const ir = (route==='iv-inf' && t>=0 && t<tinf) ? dose/tinf : 0;
+    if(route==='ev'){
+      if(nc===1) return [-ka*X[0], ka*X[0]-k10*X[1]];
+      if(nc===2) return [-ka*X[0], ka*X[0]-(k10+k12)*X[1]+k21*X[2], k12*X[1]-k21*X[2]];
+      return [-ka*X[0], ka*X[0]-(k10+k12+k13)*X[1]+k21*X[2]+k31*X[3], k12*X[1]-k21*X[2], k13*X[1]-k31*X[3]];
+    }
+    if(nc===1) return [ir-k10*X[0]];
+    if(nc===2) return [ir-(k10+k12)*X[0]+k21*X[1], k12*X[0]-k21*X[1]];
+    return [ir-(k10+k12+k13)*X[0]+k21*X[1]+k31*X[2], k12*X[0]-k21*X[1], k13*X[0]-k31*X[2]];
+  }
+  function getCSingle(X){ return (route==='ev'?X[1]:X[0]) / V1; }
+  const dim = route==='ev' ? nc+1 : nc;
+
+  // Initial conditions: apply single dose at t=0
+  let Xs = new Array(dim).fill(0);
+  if(route==='ev')      Xs[0] = dose;  // absorption compartment
+  else if(route==='iv-bolus') Xs[0] = dose;  // central compartment amount
+  // iv-inf: starts at 0, input via derivs
+
+  singleConcs[0] = Math.max(0, getCSingle(Xs));
+
+  // RK4 integration WITHOUT clamping (no Math.max(0)) to preserve mass balance
+  // This is critical — clamping removes drug mass and breaks superposition
+  for(let i=0; i<N_inner; i++){
+    const t = i * dtInner;
+    const k1 = derivsSingle(t, Xs);
+    const Xm1 = Xs.map((x,j) => x + k1[j]*dtInner/2);
+    const k2 = derivsSingle(t + dtInner/2, Xm1);
+    const Xm2 = Xs.map((x,j) => x + k2[j]*dtInner/2);
+    const k3 = derivsSingle(t + dtInner/2, Xm2);
+    const Xm3 = Xs.map((x,j) => x + k3[j]*dtInner);
+    const k4 = derivsSingle(t + dtInner, Xm3);
+    Xs = Xs.map((x,j) => x + (k1[j]+2*k2[j]+2*k3[j]+k4[j])*dtInner/6);
+    singleConcs[i+1] = Math.max(0, getCSingle(Xs));
+  }
+
+  // ── Step 2: Superpose all doses via linear interpolation ──
+  function interpSingle(tAfter){
+    if(tAfter <= 0)    return singleConcs[0];
+    if(tAfter >= tMax) return singleConcs[N_inner];
+    const idx = tAfter / dtInner;
+    const lo  = Math.floor(idx);
+    const frac = idx - lo;
+    return singleConcs[lo] + frac * (singleConcs[lo+1] - singleConcs[lo]);
+  }
+
+  return tGrid.map(t => {
+    let total = 0;
+    for(let d=0; d<nDose; d++){
+      const tAfter = t - d*tau;
+      if(tAfter >= -1e-10) total += interpSingle(Math.max(0, tAfter));
+    }
+    return Math.max(0, total);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1798,9 +1969,9 @@ function renderOneFitChart(canvasEl, data, fit, def, dose, tinf, caScale, label)
     {label:label?`${label} 观测值`:'观测值',data:obsData,backgroundColor:'rgba(0,212,255,.85)',pointRadius:5},
     {label:'拟合曲线',data:fitData,type:'line',borderColor:'rgba(245,158,11,.9)',borderWidth:2.5,pointRadius:0,tension:.3,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},scales:{
-    x:{type:'linear',title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-    y:{type:caScale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-  },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}});
+    x:{type:'linear',title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+    y:{type:caScale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+  },plugins:{legend:{labels:{color:'#475569',font:{size:10}}}}}});
 }
 
 // ── Helper: render one residual chart ──
@@ -1811,9 +1982,9 @@ function renderOneResChart(canvasEl, data, fit, label){
     {label:label?`${label} 加权残差`:'加权残差',data:data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.7)',pointRadius:4},
     {label:'零线',data:[{x:0,y:0},{x:tMax,y:0}],type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
   ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},scales:{
-    x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-    y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-  },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}});
+    x:{title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+    y:{title:{display:true,text:'加权残差',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+  },plugins:{legend:{labels:{color:'#475569',font:{size:10}}}}}});
 }
 
 function renderCAFit(){
@@ -1898,10 +2069,11 @@ function calcDerivedParams(p, def, dose, tu){
   const k10=p.k10||0.1, V1=p.V1||10;
   const CL=k10*V1;
   const d={};
-  d['CL (L/h)']=CL;
   if(def.route==='ev'){
+    d['CL/F (L/h)']=CL;
     d['Vd/F (L)']=V1;
   } else {
+    d['CL (L/h)']=CL;
     d['Vd (L)']=V1;
   }
   if(def.nc===2){
@@ -1932,11 +2104,14 @@ function buildDerivedRows(p, def, dose, tu, cu, nca){
   const rows=[];
   const add=(name,val,unit,desc)=>{ if(val!=null&&!isNaN(val)) rows.push({name,val,unit,desc}); };
 
-  // Clearance
-  add('CL', CL, 'L/h', '清除率 (= k10 × V1)');
-  // Volume
-  if(def.route==='ev') add('Vd/F', V1, 'L', '表观分布容积');
-  else add('Vd', V1, 'L', '分布容积 (中央室)');
+  // Clearance — CL/F for EV route (V1 is Vd/F), CL for IV
+  if(def.route==='ev'){
+    add('CL/F', CL, 'L/h', '表观清除率 (= k10 × Vd/F)');
+    add('Vd/F', V1, 'L', '表观分布容积');
+  } else {
+    add('CL', CL, 'L/h', '清除率 (= k10 × V1)');
+    add('Vd', V1, 'L', '分布容积 (中央室)');
+  }
 
   // 2-cpt extras
   if(def.nc===2){
@@ -1961,8 +2136,7 @@ function buildDerivedRows(p, def, dose, tu, cu, nca){
     add('AUC₀₋t', nca.auc0t, `${cu}·${tu}`, '观测时间段AUC');
     add('AUC₀₋∞', nca.auc0inf, `${cu}·${tu}`, '外推至无穷大AUC');
     add('T1/2', nca.t_half, tu, '末端消除半衰期');
-    // CL/F from NCA (show only for EV where CL=CL/F is separate)
-    if(def.route==='ev'&&nca.cl) add('CL/F', nca.cl, `L/${tu}`, '表观清除率');
+    // CL/F already added above from micro-constants for EV; skip NCA duplicate
   }
   return rows;
 }
@@ -1974,7 +2148,7 @@ function buildCAParamHTML(fit, def, dose, tinf, data, cu, tu, wt, showNCA){
   const descMap={ka:'吸收速率常数',k10:'一级消除速率常数',k12:'中央室→外周室1',k21:'外周室1→中央室',k13:'中央室→外周室2',k31:'外周室2→中央室',V1:'中央室（表观）分布容积'};
   const nca=showNCA?caFittedNCA(data,fit,def,dose,tinf):null;
   const derivedRows=buildDerivedRows(p,def,dose,tu,cu,nca);
-  const mkH=(t)=>`<div style="background:rgba(0,212,255,.06);border-left:3px solid var(--ac);padding:5px 10px;margin:10px 0 6px;font-size:11px;font-weight:700;color:var(--ac)">${t}</div>`;
+  const mkH=(t)=>`<div style="background:#eff6ff;border-left:3px solid var(--ac);padding:5px 10px;margin:10px 0 6px;font-size:11px;font-weight:700;color:var(--ac)">${t}</div>`;
   let html='';
   // Ⅰ Direct fit params
   html+=mkH('Ⅰ 模型直接拟合参数');
@@ -2067,8 +2241,8 @@ function renderCADiag(){
           {label:'加权残差',data:r.data.map((d,i)=>({x:d.t,y:wRes[i]})),backgroundColor:'rgba(0,212,255,.75)',pointRadius:4},
           {label:'零线',data:[{x:0,y:0},{x:tMax,y:0}],type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
         ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},scales:{
-          x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}},
-          y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}}
+          x:{title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}},
+          y:{title:{display:true,text:'加权残差',color:'#475569'},ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}}
         },plugins:{legend:{display:false}}}});
       }
       if(cvDV){
@@ -2077,8 +2251,8 @@ function renderCADiag(){
           {label:'DV vs PRED',data:r.data.map((d,i)=>({x:r.fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:4},
           {label:'对角线',data:[{x:0,y:0},{x:mx,y:mx}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
         ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},scales:{
-          x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}},
-          y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}}
+          x:{title:{display:true,text:'预测值',color:'#475569'},ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}},
+          y:{title:{display:true,text:'观测值',color:'#475569'},ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}}
         },plugins:{legend:{display:false}}}});
       }
       // Capture residual chart for Word report
@@ -2103,17 +2277,17 @@ function renderCADiag(){
       {label:'零线',data:[{x:0,y:0},{x:Math.max(...data.map(d=>d.t)),y:0}],
        type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
     ]},options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{title:{display:true,text:'时间',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{title:{display:true,text:'加权残差',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+      x:{title:{display:true,text:'时间',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+      y:{title:{display:true,text:'加权残差',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+    },plugins:{legend:{labels:{color:'#475569'}}}}});
     const mx=Math.max(...data.map(d=>d.c));
     G.charts['caDiag_dv_single']=new Chart(document.getElementById('ca-dv-cv'),{type:'scatter',data:{datasets:[
       {label:'DV vs PRED',data:data.map((d,i)=>({x:fit.pred[i],y:d.c})),backgroundColor:'rgba(124,58,237,.75)',pointRadius:5},
       {label:'对角线',data:[{x:0,y:0},{x:mx,y:mx}],type:'line',borderColor:'rgba(245,158,11,.5)',borderWidth:1.5,pointRadius:0,borderDash:[5,5]}
     ]},options:{responsive:true,maintainAspectRatio:false,scales:{
-      x:{title:{display:true,text:'预测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}},
-      y:{title:{display:true,text:'观测值',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-    },plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+      x:{title:{display:true,text:'预测值',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}},
+      y:{title:{display:true,text:'观测值',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+    },plugins:{legend:{labels:{color:'#475569'}}}}});
   }
 }
 
@@ -2147,10 +2321,12 @@ function renderCABatchTable(){
   const tu=document.getElementById('nca-tu')?.value||'h';
   const def=batch[0].def;
   const pNames=def.params.map(pp=>pp.id);
-  // Unified columns: direct params + key derived params (CL, T1/2, Cmax, Tmax, AUC0t, AUC0inf)
-  const drvCols=['CL','T1/2','Cmax','Tmax','AUC₀₋t','AUC₀₋∞'];
+  // Unified columns: direct params + key derived params
+  const isEV=def.route==='ev';
+  const clLabel=isEV?'CL/F':'CL';
+  const drvCols=[clLabel,'T1/2','Cmax','Tmax','AUC₀₋t','AUC₀₋∞'];
   const drvUnits={
-    'CL':'L/h','T1/2':tu,'Cmax':cu,'Tmax':tu,
+    [clLabel]:'L/h','T1/2':tu,'Cmax':cu,'Tmax':tu,
     'AUC₀₋t':`${cu}·${tu}`,'AUC₀₋∞':`${cu}·${tu}`
   };
   const getRow=(r)=>{
@@ -2158,7 +2334,7 @@ function renderCABatchTable(){
     const p=r.fit.params;
     const k10=p.k10||0.1,V1=p.V1||10;
     return{
-      'CL':k10*V1,
+      [clLabel]:k10*V1,
       'T1/2':nca?nca.t_half:(Math.LN2/k10),
       'Cmax':nca?nca.cmax:null,
       'Tmax':nca?nca.tmax:null,
@@ -2247,15 +2423,22 @@ function updateSim(){
   });
   document.getElementById('sim-pp').innerHTML=html;
 }
+// Debounce timer for simulation re-runs (avoids rapid-fire calls)
+let _simDebounce=null;
+function _scheduleRun(){
+  if(_simDebounce) clearTimeout(_simDebounce);
+  _simDebounce=setTimeout(()=>{ _simDebounce=null; runSim(); }, 30);
+}
+
 function syncSimInput(id, val){
-  // Called when slider moves → update number input
+  // Called when slider moves → update number input display
   const n=document.getElementById('sn-'+id);
   if(n){
     const numVal=parseFloat(val);
-    n.value=numVal%1===0?numVal:numVal.toFixed(numVal<0.01?4:numVal<0.1?3:3);
+    n.value=Number.isInteger(numVal)?numVal:numVal.toFixed(numVal<0.01?4:numVal<0.1?3:3);
   }
   sv(id,val);
-  runSim();
+  _scheduleRun();
 }
 function syncSimSlider(id, val){
   // Called when number input changes → update slider
@@ -2264,29 +2447,48 @@ function syncSimSlider(id, val){
   const s=document.getElementById('sr-'+id);
   if(s) s.value=numVal;
   sv(id,val);
-  runSim();
+  _scheduleRun();
 }
 function getSimP(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
   const defs=SIM_DEFS[r]?.[nc]||[];
   const p={};
   defs.forEach(d=>{
-    // Prefer number input (more precise) over slider
+    // Prefer number input (more precise) over slider — use parseFloat to avoid empty-string issues
     const numEl=document.getElementById('sn-'+d.id);
     const slEl=document.getElementById('sr-'+d.id);
-    const val=numEl?+numEl.value:(slEl?+slEl.value:d.d);
-    p[d.id]=isNaN(val)?d.d:Math.min(Math.max(val,d.mn),d.mx);
+    const nv=numEl&&numEl.value!==''?parseFloat(numEl.value):NaN;
+    const sv2=slEl&&slEl.value!==''?parseFloat(slEl.value):NaN;
+    const raw=!isNaN(nv)?nv:!isNaN(sv2)?sv2:d.d;
+    p[d.id]=isNaN(raw)?d.d:Math.min(Math.max(raw,d.mn),d.mx);
   });
   return p;
 }
 function runSim(){
   const r=document.getElementById('sim-route').value,nc=+document.getElementById('sim-nc').value;
   const p=getSimP();
-  function rv(id,def){const n=document.getElementById('sn-'+id);const s=document.getElementById('sr-'+id);const nv=n?+n.value:NaN;const sv2=s?+s.value:NaN;return !isNaN(nv)&&nv>0?nv:!isNaN(sv2)&&sv2>0?sv2:def;}
-  const dose=rv('dose',100); const tinf=rv('tinf',1); const nDose=rv('ndose',1); const tau=rv('tau',24); const tMax=rv('tmax',72);
+  // Read dosing params — prefer number inputs, fall back to sliders, then default
+  // Use >= 0 check (not > 0) so that ndose=1 and similar are handled correctly
+  function rv(id,def){
+    const n=document.getElementById('sn-'+id);
+    const s=document.getElementById('sr-'+id);
+    const nv=n&&n.value!==''?parseFloat(n.value):NaN;
+    const sv2=s&&s.value!==''?parseFloat(s.value):NaN;
+    const chosen=!isNaN(nv)?nv:!isNaN(sv2)?sv2:def;
+    return isNaN(chosen)?def:chosen;
+  }
+  const dose=Math.max(0.001,rv('dose',100));
+  const tinf=Math.max(0.001,rv('tinf',1));
+  const nDose=Math.max(1,Math.round(rv('ndose',1)));
+  const tau=Math.max(0.001,rv('tau',24));
+  const tMax=Math.max(0.1,rv('tmax',72));
   const scale=document.getElementById('sim-scale').value;
-  const N=400;
-  const tGrid=Array.from({length:N+1},(_,i)=>tMax*i/N);
+  // Step size for output grid (user-defined, min 0.01h)
+  const stepSize=Math.max(0.01, rv('stepsize', 0.1));
+  const N=Math.min(Math.ceil(tMax/stepSize), 10000); // cap at 10000 points
+  const tGrid=Array.from({length:N+1},(_,i)=>parseFloat((i*stepSize).toFixed(6))).filter(t=>t<=tMax+1e-9);
+  // Ensure tMax is always included
+  if(tGrid[tGrid.length-1]<tMax-1e-9) tGrid.push(tMax);
   let concs;
   try{concs=rk4Sim(tGrid,p,r,nc,dose,tinf,nDose,tau);}
   catch(e){concs=new Array(N+1).fill(0);}
@@ -2295,7 +2497,7 @@ function runSim(){
   const k10=p.k10||.15,V1=p.V1||30;
   const thalf=Math.LN2/k10;
   const auc=aucLinear(tGrid,concs);
-  const clast=concs[N];
+  const clast=concs[concs.length-1];
   const aucInf=auc+clast/k10;
   const CL=k10*V1;
   document.getElementById('sc-cmax').textContent=cmax.toFixed(3);
@@ -2305,7 +2507,7 @@ function runSim(){
   document.getElementById('sc-cl').textContent=CL.toFixed(3);
   document.getElementById('sc-vd').textContent=V1.toFixed(1);
   const dispC=concs.map(c=>scale==='log'&&c<=0?null:c);
-  G._simData={tGrid,concs};
+  G._simData={tGrid,concs,stepSize};
   dKill('simM');
   G.charts['simM']=new Chart(document.getElementById('sim-cv'),{type:'line',
     data:{datasets:[{label:`${r}·${nc}室`,
@@ -2314,9 +2516,9 @@ function runSim(){
       fill:{target:'origin',above:'rgba(0,212,255,.04)'},pointRadius:0,tension:.3}]},
     options:{responsive:true,maintainAspectRatio:false,animation:{duration:100},
       scales:{
-        x:{type:'linear',min:0,max:tMax,title:{display:true,text:'时间 (h)',color:'#64748b'},ticks:{color:'#64748b',maxTicksLimit:10},grid:{color:'rgba(255,255,255,.03)'}},
-        y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度 (ng/mL)',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,.03)'}}
-      },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},tooltip:{mode:'index',intersect:false}}}});
+        x:{type:'linear',min:0,max:tMax,title:{display:true,text:'时间 (h)',color:'#475569'},ticks:{color:'#475569',maxTicksLimit:10},grid:{color:'rgba(0,0,0,.06)'}},
+        y:{type:scale==='log'?'logarithmic':'linear',title:{display:true,text:'浓度 (ng/mL)',color:'#475569'},ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,.06)'}}
+      },plugins:{legend:{labels:{color:'#475569',font:{size:10}}},tooltip:{mode:'index',intersect:false}}}});
   const defs=SIM_DEFS[r]?.[nc]||[];
   let sum='';
   defs.forEach(d=>{sum+=`<div>${d.id}: <span style="color:var(--ac)">${(p[d.id]||0).toFixed(3)}</span></div>`;});
@@ -2331,7 +2533,7 @@ function resetSim(){
     const sn=document.getElementById('sn-'+d.id);if(sn) sn.value=d.d;
     const sv=document.getElementById('sv-'+d.id);if(sv) sv.textContent=d.d;
   });
-  const defaults={dose:100,ndose:1,tau:24,tmax:72,tinf:1};
+  const defaults={dose:100,ndose:1,tau:24,tmax:72,tinf:1,stepsize:0.1};
   Object.entries(defaults).forEach(([k,v])=>{
     const sr=document.getElementById('sr-'+k);if(sr) sr.value=v;
     const sn=document.getElementById('sn-'+k);if(sn) sn.value=v;
@@ -2574,12 +2776,14 @@ function downloadReport(){
       // ── Multi-subject batch CA ──
       let batchRows='';
       const pNames=def.params.map(p=>p.id);
-      const drvCols=['CL','T1/2','Cmax','Tmax','AUC₀₋t','AUC₀₋∞'];
-      const drvUnits2={'CL':'L/h','T1/2':tu,'Cmax':cu,'Tmax':tu,'AUC₀₋t':`${cu}·${tu}`,'AUC₀₋∞':`${cu}·${tu}`};
+      const isEV2=def.route==='ev';
+      const clLbl=isEV2?'CL/F':'CL';
+      const drvCols=[clLbl,'T1/2','Cmax','Tmax','AUC₀₋t','AUC₀₋∞'];
+      const drvUnits2={[clLbl]:'L/h','T1/2':tu,'Cmax':cu,'Tmax':tu,'AUC₀₋t':`${cu}·${tu}`,'AUC₀₋∞':`${cu}·${tu}`};
       caBatch.forEach(r=>{
         const nca=caFittedNCA(r.data,r.fit,r.def,r.dose,r.tinf);
         const p2=r.fit.params; const k10b=p2.k10||0.1,V1b=p2.V1||10;
-        const dv={'CL':k10b*V1b,'T1/2':nca?nca.t_half:(Math.LN2/k10b),'Cmax':nca?nca.cmax:null,'Tmax':nca?nca.tmax:null,'AUC₀₋t':nca?nca.auc0t:null,'AUC₀₋∞':nca?nca.auc0inf:null};
+        const dv={[clLbl]:k10b*V1b,'T1/2':nca?nca.t_half:(Math.LN2/k10b),'Cmax':nca?nca.cmax:null,'Tmax':nca?nca.tmax:null,'AUC₀₋t':nca?nca.auc0t:null,'AUC₀₋∞':nca?nca.auc0inf:null};
         batchRows+=`<tr>
           <td>${r.subj}</td><td>${r.fit.r2.toFixed(4)}</td><td>${r.fit.rmse.toFixed(4)}</td>
           ${pNames.map(n=>`<td>${fmt(r.fit.params[n],5)}</td>`).join('')}
@@ -2722,13 +2926,14 @@ function simDownloadChart(){
 }
 function simDownloadCSV(){
   if(!G._simData){notify('请先运行模拟','warn');return;}
-  const{tGrid,concs}=G._simData;
+  const{tGrid,concs,stepSize}=G._simData;
   const rows=[['Time(h)','Conc(ng/mL)'],...tGrid.map((t,i)=>[t.toFixed(4),concs[i].toFixed(6)])];
   const csv=rows.map(r=>r.join(',')).join('\n');
   const b=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);
-  a.download='PK_Simulation_Data.csv';a.click();URL.revokeObjectURL(a.href);
-  notify('模拟数据CSV已下载','ok');
+  const ss=stepSize?stepSize.toFixed(2):'0.10';
+  a.download=`PK_Simulation_step${ss}h.csv`;a.click();URL.revokeObjectURL(a.href);
+  notify(`模拟数据CSV已下载（${tGrid.length}个时间点，步长${ss}h）`,'ok');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
