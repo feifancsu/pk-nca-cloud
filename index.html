@@ -237,6 +237,7 @@ input[type=range]{width:100%;accent-color:var(--ac);cursor:pointer}
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <div class="csu-tag">🎓 湘雅药学院</div>
+    <a href="mailto:feifan.xie@csu.edu.cn" class="btn btn-g btn-sm" title="联系我们" style="text-decoration:none">✉ 联系</a>
     <button class="btn btn-g btn-sm" onclick="openMo('mo-about')">算法说明</button>
   </div>
 </nav>
@@ -1048,8 +1049,20 @@ function aumcLinear(ts, cs){
 }
 
 /**
- * AUMC Log-down version for LinUpLogDown
- * Descending intervals use exact log-linear formula
+ * AUMC for Linear Up / Log Down method
+ *
+ * For descending intervals (c2 < c1, both positive), use the exact log-linear formula:
+ *   C(t) = c1 * exp(-λ*(t-t1)),  λ = ln(c1/c2)/Δt
+ *   ∫t1→t2 t·C(t)dt = (t1·c1 - t2·c2)/λ + (c1-c2)/λ²
+ *
+ * Derivation:
+ *   Let u=t-t1 → c1·∫0→Δt (u+t1)·exp(-λu)du
+ *   = c1·[(-Δt·c2/c1)/λ + (c1-c2)/(c1·λ²) + t1·(c1-c2)/(c1·λ)]
+ *   = -Δt·c2/λ + (c1-c2)/λ² + t1·(c1-c2)/λ
+ *   = (t1·c1 - t2·c2)/λ + (c1-c2)/λ²          ← POSITIVE sign on last term
+ *
+ * Previous code had a sign error (-) on the (c1-c2)/λ² term, causing AUMC
+ * to become hugely negative for descending intervals → MRT = AUMC/AUC < 0.
  */
 function aumcLinUpLogDown(ts, cs){
   let s=0;
@@ -1057,14 +1070,17 @@ function aumcLinUpLogDown(ts, cs){
     const dt=ts[i+1]-ts[i];
     const t1=ts[i],t2=ts[i+1],c1=cs[i],c2=cs[i+1];
     if(c1>0 && c2>0 && c2<c1){
+      // Descending: use exact log-linear integration
       const lam=Math.log(c1/c2)/dt;
-      if(lam<1e-12){
+      if(lam<1e-10){
+        // Near-zero slope: fall back to linear trapezoid
         s += (t1*c1+t2*c2)/2*dt;
       } else {
-        // exact: integral of t*c1*exp(-lam*(t-t1)) from t1 to t2
-        s += (t1*c1-t2*c2)/lam - (c1-c2)/(lam*lam);
+        // Exact formula — note the PLUS sign (not minus) on the last term
+        s += (t1*c1-t2*c2)/lam + (c1-c2)/(lam*lam);
       }
     } else {
+      // Ascending or zero: linear trapezoid
       s += (t1*c1+t2*c2)/2*dt;
     }
   }
@@ -2693,18 +2709,16 @@ function downloadReport(){
     ?'线性梯形法（Linear Trapezoidal）'
     :'线性升-对数降法（Linear Up/Log Down）';
 
-  // ── Shared NCA charts (pre-rendered offscreen images) ──
-  // Use stored offscreen images (reliable, even if tab is hidden)
-  // Fall back to DOM canvas only if offscreen not available
-  const ncaMainImg=incNCAimg?(G._ncaMainImgUrl||getImg('nca-chart-main')):null;
-  const ncaSemiImg=incNCAimg?(G._ncaSemiImgUrl||getImg('nca-chart-semi')):null;
+  // ── Shared NCA charts (all subjects together) ──
+  const ncaMainImg=incNCAimg?getImg('nca-chart-main'):null;
+  const ncaSemiImg=incNCAimg?getImg('nca-chart-semi'):null;
 
-  // ── Per-subject NCA λz chart images (pre-rendered offscreen) ──
+  // ── Per-subject NCA λz chart images (canvases rendered in λz tab) ──
   const ncaLZImgs=[];
   if(incNCAimg&&G.ncaResults){
     G.ncaResults.forEach(r=>{
-      // Use pre-rendered offscreen image if available, else try DOM canvas
-      const img=r.lzImgUrl||getImg('lzc-'+r.subj.replace(/[^a-z0-9]/gi,'_'));
+      const cid='lzc-'+r.subj.replace(/[^a-z0-9]/gi,'_');
+      const img=getImg(cid);
       ncaLZImgs.push({subj:r.subj,img});
     });
   }
@@ -2776,14 +2790,12 @@ function downloadReport(){
       // ── Multi-subject batch CA ──
       let batchRows='';
       const pNames=def.params.map(p=>p.id);
-      const isEV2=def.route==='ev';
-      const clLbl=isEV2?'CL/F':'CL';
-      const drvCols=[clLbl,'T1/2','Cmax','Tmax','AUC₀₋t','AUC₀₋∞'];
-      const drvUnits2={[clLbl]:'L/h','T1/2':tu,'Cmax':cu,'Tmax':tu,'AUC₀₋t':`${cu}·${tu}`,'AUC₀₋∞':`${cu}·${tu}`};
+      const drvCols=['CL','T1/2','Cmax','Tmax','AUC₀₋t','AUC₀₋∞'];
+      const drvUnits2={'CL':'L/h','T1/2':tu,'Cmax':cu,'Tmax':tu,'AUC₀₋t':`${cu}·${tu}`,'AUC₀₋∞':`${cu}·${tu}`};
       caBatch.forEach(r=>{
         const nca=caFittedNCA(r.data,r.fit,r.def,r.dose,r.tinf);
         const p2=r.fit.params; const k10b=p2.k10||0.1,V1b=p2.V1||10;
-        const dv={[clLbl]:k10b*V1b,'T1/2':nca?nca.t_half:(Math.LN2/k10b),'Cmax':nca?nca.cmax:null,'Tmax':nca?nca.tmax:null,'AUC₀₋t':nca?nca.auc0t:null,'AUC₀₋∞':nca?nca.auc0inf:null};
+        const dv={'CL':k10b*V1b,'T1/2':nca?nca.t_half:(Math.LN2/k10b),'Cmax':nca?nca.cmax:null,'Tmax':nca?nca.tmax:null,'AUC₀₋t':nca?nca.auc0t:null,'AUC₀₋∞':nca?nca.auc0inf:null};
         batchRows+=`<tr>
           <td>${r.subj}</td><td>${r.fit.r2.toFixed(4)}</td><td>${r.fit.rmse.toFixed(4)}</td>
           ${pNames.map(n=>`<td>${fmt(r.fit.params[n],5)}</td>`).join('')}
@@ -2865,12 +2877,10 @@ function downloadReport(){
   h2{font-size:14pt;font-weight:bold;color:#1a3a6b;margin-top:20pt;margin-bottom:7pt;
     border-bottom:1.5pt solid #1a3a6b;padding-bottom:2pt;font-family:'黑体',SimHei,Arial}
   h3{font-size:12pt;font-weight:bold;color:#2d5a9e;margin-top:11pt;margin-bottom:5pt}
-  table{width:100%;border-collapse:collapse;margin:10pt auto;font-size:10pt;text-align:center}
-  th{background:#1a3a6b;color:#fff;padding:5pt 7pt;text-align:center;font-family:'黑体',SimHei,Arial;vertical-align:middle}
-  td{padding:5pt 7pt;border:0.5pt solid #bbb;text-align:center;vertical-align:middle}
-  tr:nth-child(even) td{background:#f0f5fb}
-  td:first-child{text-align:left;font-weight:500}
-  th:first-child{text-align:left}
+  table{width:100%;border-collapse:collapse;margin:7pt 0;font-size:10pt}
+  th{background:#1a3a6b;color:#fff;padding:5pt 6pt;text-align:center;font-family:'黑体',SimHei,Arial}
+  td{padding:4pt 6pt;border:0.5pt solid #aaa;text-align:center}
+  tr:nth-child(even) td{background:#f0f4fa}
   .cover{text-align:center;padding:48pt 0 26pt;border-bottom:2pt solid #1a3a6b;margin-bottom:16pt}
   .discl{background:#fff8e1;border-left:3pt solid #f59e0b;padding:8pt 12pt;font-size:10pt;color:#666}
   img{max-width:100%}
@@ -2888,12 +2898,12 @@ function downloadReport(){
 </div>
 <h2>一、研究概述</h2>
 <table><tbody>
-  <tr><td style="text-align:left;width:28%"><b>药物名称</b></td><td>${drug}</td>
-      <td style="text-align:left;width:28%"><b>分析人员</b></td><td>${analyst}</td></tr>
-  <tr><td><b>研究机构</b></td><td>${inst}</td>
-      <td><b>报告日期</b></td><td>${date}</td></tr>
-  <tr><td><b>受试者数</b></td><td>${G.ncaResults?G.ncaResults.length:'—'}</td>
-      <td><b>分析平台</b></td><td>PharmCloud PK v3.0</td></tr>
+  <tr><td style="text-align:left;width:28%"><b>药物名称</b></td><td style="text-align:left">${drug}</td>
+      <td style="text-align:left;width:28%"><b>分析人员</b></td><td style="text-align:left">${analyst}</td></tr>
+  <tr><td style="text-align:left"><b>研究机构</b></td><td style="text-align:left">${inst}</td>
+      <td style="text-align:left"><b>报告日期</b></td><td style="text-align:left">${date}</td></tr>
+  <tr><td style="text-align:left"><b>受试者数</b></td><td style="text-align:left">${G.ncaResults?G.ncaResults.length:'—'}</td>
+      <td style="text-align:left"><b>分析平台</b></td><td style="text-align:left">PharmCloud PK v3.0</td></tr>
 </tbody></table>
 ${methSec}${ncaSec}${caSec}${disclaimSec}
 </body></html>`;
@@ -2926,14 +2936,13 @@ function simDownloadChart(){
 }
 function simDownloadCSV(){
   if(!G._simData){notify('请先运行模拟','warn');return;}
-  const{tGrid,concs,stepSize}=G._simData;
+  const{tGrid,concs}=G._simData;
   const rows=[['Time(h)','Conc(ng/mL)'],...tGrid.map((t,i)=>[t.toFixed(4),concs[i].toFixed(6)])];
   const csv=rows.map(r=>r.join(',')).join('\n');
   const b=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);
-  const ss=stepSize?stepSize.toFixed(2):'0.10';
-  a.download=`PK_Simulation_step${ss}h.csv`;a.click();URL.revokeObjectURL(a.href);
-  notify(`模拟数据CSV已下载（${tGrid.length}个时间点，步长${ss}h）`,'ok');
+  a.download='PK_Simulation_Data.csv';a.click();URL.revokeObjectURL(a.href);
+  notify('模拟数据CSV已下载','ok');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
